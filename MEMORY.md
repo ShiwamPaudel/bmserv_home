@@ -158,6 +158,7 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 
 Newest first: date, what changed, docs touched.
 
+- 2026-11-16 — Text trim across the app: no intro lines (Settings, Settings tabs, Report a problem, staff Equipment, Scan, PMS Due soon/Upcoming, Reports PDF note, manuals on model/equipment, recipients, WhatsApp), no explanation hints on fields; remaining hints shortened (role choices, username, logo, CSV import, model search). Rule in DESIGN section 9. Logo preview no longer overflows its box. Docs: DESIGN, MEMORY.
 - 2026-11-16 — My account: removed card explanation lines, the "You get notified when" block and the Sign out card; Sign out is one red-outline button. Docs: DESIGN, MEMORY.
 - 2026-11-16 — Install app button on iPhone too (opens the steps); bottom bar alignment (one column per item, fixed icon line, one-line labels; staff bar had 4 items in 5 columns). Docs: PRD, DESIGN, MEMORY.
 - 2026-11-16 — Reports (period, highlights, PDF and PowerPoint with logo), hospital logo (migration 0005), Hospital setup menu, 1-year default warranty on new equipment, coverage on rows and filters, PMS Due soon/Upcoming, install popup, model search, form alignment. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.

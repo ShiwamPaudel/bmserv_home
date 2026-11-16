@@ -53,11 +53,6 @@ export function PmsScreen() {
           { value: "done", label: t.pms.filterDone },
         ]}
       />
-      {(filter === "soon" || filter === "upcoming") && (
-        <p className="help" style={{ margin: "0 0 8px" }}>
-          {filter === "soon" ? t.pms.soonHelp(soonDays) : t.pms.upcomingHelp(soonDays)}
-        </p>
-      )}
       {error && <Notice tone="bad">{error}</Notice>}
       {q.isLoading ? (
         <Loading />

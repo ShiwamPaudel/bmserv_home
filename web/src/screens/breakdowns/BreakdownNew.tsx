@@ -98,7 +98,7 @@ export function BreakdownNew() {
           )}
         </div>
         <TextArea label={t.breakdowns.problem} value={f.problem} onChange={(v) => setF({ ...f, problem: v })} error={errs.problem} />
-        <TextField label={t.breakdowns.reportedBy} value={f.reportedByName} onChange={(v) => setF({ ...f, reportedByName: v })} error={errs.reportedByName} help={t.breakdowns.reportedByHelp} />
+        <TextField label={t.breakdowns.reportedBy} value={f.reportedByName} onChange={(v) => setF({ ...f, reportedByName: v })} error={errs.reportedByName} />
         <TextField label={t.breakdowns.reportedAt} type="datetime-local" value={f.reportedAt} onChange={(v) => setF({ ...f, reportedAt: v })} error={errs.reportedAt} />
         <div>
           <button className="btn primary" type="submit" disabled={save.isPending || !online}>

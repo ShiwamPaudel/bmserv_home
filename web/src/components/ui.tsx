@@ -184,7 +184,7 @@ export function WhatsAppButton({ phone, text, label, plain }: { phone: string | 
   const href = whatsAppLink(phone, text, code);
   if (!href) return null;
   return (
-    <a className={`btn whatsapp${plain ? " plain" : ""}`} href={href} target="_blank" rel="noopener noreferrer" title={t.whatsapp.help}>
+    <a className={`btn whatsapp${plain ? " plain" : ""}`} href={href} target="_blank" rel="noopener noreferrer">
       <MessageCircle {...iconProps} size={18} />
       {label ?? t.whatsapp.button}
     </a>

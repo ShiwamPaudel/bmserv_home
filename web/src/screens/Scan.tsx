@@ -67,9 +67,6 @@ export function Scan() {
   return (
     <>
       <PageHead title={t.scan.title} />
-      <p className="muted" style={{ marginBottom: 12 }}>
-        {t.scan.help}
-      </p>
       {error ? <Notice tone="bad">{error}</Notice> : <video ref={video} className="scan-video" playsInline muted aria-label={t.scan.title} />}
       {notOurs && <Notice tone="wait">{t.scan.notBmserv}</Notice>}
     </>

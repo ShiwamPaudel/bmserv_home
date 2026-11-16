@@ -253,7 +253,6 @@ export function EquipmentForm() {
             <label>
               {t.equipment.designated} <span className="opt">({t.app.optional})</span>
             </label>
-            <div className="help">{t.equipment.designatedHelp}</div>
             {engineers.length ? (
               engineers.map((se) => (
                 <Checkbox
@@ -282,9 +281,6 @@ export function EquipmentForm() {
             <legend>{t.equipment.warrantyTitle}</legend>
             <Checkbox checked={w.on} onChange={(on) => setW({ ...w, on })}>
               {t.equipment.warrantyOn}
-              <span className="help" style={{ display: "block" }}>
-                {t.equipment.warrantyOnHelp}
-              </span>
             </Checkbox>
             {w.on && (
               <div className="warranty-fields">

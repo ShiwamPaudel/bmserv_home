@@ -35,9 +35,6 @@ export function AskProvider() {
       <p className="muted">{o.provider.name}</p>
       {error && <Notice tone="bad">{error}</Notice>}
       <Section title={t.breakdowns.recipients}>
-        <p className="help" style={{ marginBottom: 12 }}>
-          {t.breakdowns.recipientsHelp}
-        </p>
         <RecipientsEditor options={o} value={value} onChange={setValue} />
       </Section>
       <Section title={t.breakdowns.preview}>

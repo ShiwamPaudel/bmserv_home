@@ -129,9 +129,9 @@ Phone:
 
 **My account**: a navy profile band (initials in a teal circle, name, username, role pill); then cards with an icon and a title only (no explanation lines): Password, Notifications (status on this device, Turn on / Send a test / Turn off; iPhone hint), Your details. Two columns from 1100 px. Under the cards a red-outline "Sign out" button with its icon (full width on phones), nothing else.
 
-**Report a problem** (hospital staff): intro line, one large "Scan a label" button, "Call the Biomedical Department", the last three reports. From a label: the equipment in a teal-edged box, one "What is wrong?" box, "Send to Biomedical team". After sending: confirmation, breakdown number, WhatsApp buttons for team members, "Report another problem".
+**Report a problem** (hospital staff): one large "Scan a label" button, "Call the Biomedical Department", the last three reports. From a label: the equipment in a teal-edged box, one "What is wrong?" box, "Send to Biomedical team". After sending: confirmation, breakdown number, WhatsApp buttons for team members, "Report another problem".
 
-**Equipment** (hospital staff): one intro line, search field, department select (only with more than one department), equipment rows with photo and status pill; a third line "Already reported, BD-0001" when unresolved. A row opens Report a problem for it. No department: grey notice and "Scan a label".
+**Equipment** (hospital staff): search field, department select (only with more than one department), equipment rows with photo and status pill; a third line "Already reported, BD-0001" when unresolved. A row opens Report a problem for it. No department: grey notice and "Scan a label".
 
 **Team, Hospital staff**: the person sheet shows "Departments" checkboxes (two columns where wide) when the role is Hospital staff; staff rows show "Departments: ICU, Emergency" or "No department yet".
 
@@ -213,6 +213,7 @@ All wording from `shared/terms.ts`, vocabulary from PRD.md section 4.
 - Empty screens point to the next step: "No manuals for this model yet. Upload manual."
 - Meta lines as label and value ("S.N. 778120"), not strings joined by dots or dashes.
 - No exclamation marks, no "Oops", no "successfully".
+- **Little text.** No intro lines under page titles, tabs, cards or sections, and no lines explaining what a setting or button does. Field hints only for a format, a limit or an example ("At least 8 characters", "One address per line", "For example ICU"), in a few words with no full stop. Kept: warnings about what an action does ("The equipment becomes Out of service"), "Print at 100 %", status and empty-screen lines, errors.
 
 ## 10. The one distinctive element
 

@@ -81,7 +81,7 @@ export function ModelPhotoField({
           {file && <span className="help">{t.models.photoReady}</span>}
         </div>
       </div>
-      {error ? <div className="error">{error}</div> : <div className="help">{t.models.photoHelp}</div>}
+      {error && <div className="error">{error}</div>}
     </div>
   );
 }

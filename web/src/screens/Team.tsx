@@ -306,9 +306,6 @@ function DepartmentsField({
     <div className={`field${error ? " has-error" : ""}`}>
       <fieldset>
         <legend>{t.team.departments}</legend>
-        <div className="help" style={{ marginBottom: 4 }}>
-          {t.team.departmentsHelp}
-        </div>
         {shown.length === 0 ? (
           <p className="muted">{t.team.noDepartments}</p>
         ) : (

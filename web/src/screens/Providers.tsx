@@ -143,7 +143,6 @@ function ProviderForm({ provider, onClose }: { provider?: ProviderDetail["provid
       {!provider && (
         <fieldset className="form-group">
           <legend>{t.providers.serviceDepartment}</legend>
-          <p className="help">{t.providers.serviceDepartmentHelp}</p>
           {phones.map((p, i) => (
             <div className="repeat-block" key={`p${i}`}>
               <PhoneField
@@ -195,7 +194,6 @@ function ProviderForm({ provider, onClose }: { provider?: ProviderDetail["provid
       {!provider && (
         <fieldset className="form-group">
           <legend>{t.providers.firstEngineer}</legend>
-          <p className="help">{t.providers.firstEngineerHelp}</p>
           <TextField
             label={t.providers.engineerName}
             value={engineer.name}
@@ -215,7 +213,6 @@ function ProviderForm({ provider, onClose }: { provider?: ProviderDetail["provid
             value={engineer.email}
             onChange={(v) => setEngineer({ ...engineer, email: v })}
             error={errs["engineer.email"]}
-            help={t.providers.engineerEmailHelp}
           />
         </fieldset>
       )}
@@ -540,7 +537,6 @@ export function EngineerForm({
         value={f.email}
         onChange={(v) => setF({ ...f, email: v })}
         error={errs.email}
-        help={t.providers.engineerEmailHelp}
       />
       <TextArea
         label={t.providers.engineerNotes}

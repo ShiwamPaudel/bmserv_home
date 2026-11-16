@@ -147,9 +147,6 @@ export function ModelPage() {
           ) : undefined
         }
       >
-        <p className="help" style={{ marginBottom: 8 }}>
-          {t.models.manualsHelp(equipment.length)}
-        </p>
         <FileRows files={manuals} empty={t.models.manualsEmpty} />
       </Section>
 

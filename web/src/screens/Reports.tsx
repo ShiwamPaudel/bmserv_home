@@ -103,9 +103,6 @@ export function ReportsScreen() {
           </form>
         )}
         {pptError && <Notice tone="bad">{pptError}</Notice>}
-        <p className="help" style={{ margin: "8px 0 16px" }}>
-          {t.reports.pdfHelp}
-        </p>
       </div>
 
       {!ready ? null : q.isLoading ? (

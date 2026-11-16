@@ -132,7 +132,6 @@ export function PrintLabels() {
                   {t.labels.legendFree}
                 </span>
               </div>
-              <div className="help">{t.labels.startAtHelp}</div>
             </div>
 
             {ids.length > free && <Notice tone="wait">{t.labels.tooMany(ids.length, free)}</Notice>}

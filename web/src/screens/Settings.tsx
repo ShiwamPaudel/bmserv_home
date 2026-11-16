@@ -40,9 +40,6 @@ export function SettingsScreen() {
   return (
     <>
       <PageHead title={t.settings.title} />
-      <p className="muted" style={{ marginBottom: 16 }}>
-        {t.settings.intro}
-      </p>
       {me.data?.emailRedirectTo && <Notice tone="wait">{t.settings.redirectOn(me.data.emailRedirectTo)}</Notice>}
       <div className="settings-layout">
         <nav className="settings-tabs" role="tablist" aria-label={t.settings.title}>
@@ -61,10 +58,7 @@ export function SettingsScreen() {
           ))}
         </nav>
         <div className="settings-panel" role="tabpanel">
-          <h2>{t.settings.tabs[tab]}</h2>
-          <p className="muted" style={{ margin: "4px 0 16px" }}>
-            {t.settings.tabHelp[tab]}
-          </p>
+          <h2 style={{ marginBottom: 16 }}>{t.settings.tabs[tab]}</h2>
           {/* key: a fresh form per tab, filled from the saved settings */}
           <TabForm key={`${tab}-${q.data.updatedAt}`} tab={tab} saved={q.data} />
         </div>
@@ -203,7 +197,6 @@ function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
             value={f.departmentEmail}
             onChange={(v) => set("departmentEmail", v)}
             error={errs.departmentEmail}
-            help={t.settings.departmentEmailHelp}
           />
           <PhoneField label={t.settings.departmentPhone} value={f.departmentPhone} onChange={(v) => set("departmentPhone", v)} error={errs.departmentPhone} />
         </>
@@ -220,14 +213,12 @@ function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
               { value: "ad", label: t.settings.dateAd },
             ]}
           />
-          <p className="help">{t.settings.dateDisplayHelp}</p>
           <SelectField
             label={t.settings.countryCode}
             value={f.countryCode}
             onChange={(v) => set("countryCode", v)}
             options={countryCodes.map((c) => ({ value: c.code, label: `${c.code} ${c.name}` }))}
             error={errs.countryCode}
-            help={t.settings.countryCodeHelp}
           />
         </>
       )}
@@ -276,7 +267,6 @@ function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
             checked={f.emailTeamOnReport}
             onChange={(v) => set("emailTeamOnReport", v)}
             label={t.settings.emailTeamOnReport}
-            help={t.settings.emailTeamOnReportHelp}
           />
         </>
       )}
@@ -294,9 +284,9 @@ function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
       {tab === "notifications" && (
         <>
           {!me.data?.pushPublicKey && <Notice tone="wait">{t.settings.pushNotConfigured}</Notice>}
-          <Switch checked={f.pushOnBreakdown} onChange={(v) => set("pushOnBreakdown", v)} label={t.settings.pushOnBreakdown} help={t.settings.pushHelp} />
+          <Switch checked={f.pushOnBreakdown} onChange={(v) => set("pushOnBreakdown", v)} label={t.settings.pushOnBreakdown} />
           <Switch checked={f.pushOnFixed} onChange={(v) => set("pushOnFixed", v)} label={t.settings.pushOnFixed} />
-          <Switch checked={f.whatsappButtons} onChange={(v) => set("whatsappButtons", v)} label={t.settings.whatsappButtons} help={t.settings.whatsappButtonsHelp} />
+          <Switch checked={f.whatsappButtons} onChange={(v) => set("whatsappButtons", v)} label={t.settings.whatsappButtons} />
         </>
       )}
 
@@ -325,14 +315,13 @@ function ReportingFields({
   const people = (team.data ?? []).filter((p) => p.isActive && p.role !== "staff");
   return (
     <>
-      <Switch checked={f.staffReports} onChange={(v) => set("staffReports", v)} label={t.settings.staffReports} help={t.settings.staffReportsHelp} />
+      <Switch checked={f.staffReports} onChange={(v) => set("staffReports", v)} label={t.settings.staffReports} />
       <SelectField
         label={t.settings.staffReportAssignee}
         value={f.staffReportAssigneeId ?? ""}
         onChange={(v) => set("staffReportAssigneeId", v || null)}
         options={[{ value: "", label: t.settings.staffReportAssigneeAuto }, ...people.map((p) => ({ value: p.id, label: `${p.name}, ${t.roles[p.role]}` }))]}
         error={errs.staffReportAssigneeId}
-        help={t.settings.staffReportAssigneeHelp}
       />
     </>
   );

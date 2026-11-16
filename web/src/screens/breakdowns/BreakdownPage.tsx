@@ -547,9 +547,6 @@ function WhatsAppSection({ d }: { d: BreakdownDetail }) {
   if (!provider.length && !team.length) return null;
   return (
     <Section title={t.whatsapp.sendTitle}>
-      <p className="help" style={{ marginBottom: 8 }}>
-        {t.whatsapp.help}
-      </p>
       {provider.length > 0 && (
         <>
           <h3 className="sub-head">{c.providerName || t.whatsapp.serviceSide}</h3>

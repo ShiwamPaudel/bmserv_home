@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { todayNepal } from "@bmserv/shared/dates";
 import { breakdownNumber } from "@bmserv/shared/keys";
@@ -50,8 +50,6 @@ type Open =
 
 export function EquipmentPage() {
   const { id = "" } = useParams();
-  const [params] = useSearchParams();
-  const scanned = params.get("scanned") === "1";
   const q = useQuery({ queryKey: qk.equipment(id), queryFn: () => get<EquipmentDetail>(`/equipment/${id}`) });
   const history = useQuery({
     queryKey: qk.history(id),
@@ -123,11 +121,6 @@ export function EquipmentPage() {
       ))}
       {error && <Notice tone="bad">{error}</Notice>}
 
-      {scanned && (
-        <p className="muted" style={{ marginTop: 16 }}>
-          {t.equipment.scannedActions}
-        </p>
-      )}
       <div className="actions">
         {canBreakdown && e.status !== "out_of_service" && (
           <Link className="btn primary" to={`/breakdowns/new?equipment=${e.id}`}>
@@ -267,9 +260,6 @@ export function EquipmentPage() {
           </Link>
         }
       >
-        <p className="help" style={{ marginBottom: 8 }}>
-          {t.equipment.manualsFromModel(`${e.manufacturer} ${e.model}`)}
-        </p>
         <FileRows files={d.manuals} empty={t.equipment.manualsEmpty} readOnly />
       </Section>
 
@@ -650,7 +640,6 @@ function DesignateSheet({
         })
       }
     >
-      <p className="help">{t.equipment.designatedHelp}</p>
       {detail.providerEngineers.length ? (
         detail.providerEngineers.map((se) => (
           <Checkbox

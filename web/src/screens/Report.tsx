@@ -53,7 +53,6 @@ export function ReportStart() {
         <Notice tone="off">{t.report.off}</Notice>
       ) : (
         <div className="report-start">
-          <p className="lead-text">{t.report.intro}</p>
           <Link className="btn primary big" to="/scan">
             <ScanLine {...iconProps} size={22} />
             {t.report.scan}
@@ -104,9 +103,6 @@ export function StaffEquipment() {
         </>
       ) : (
         <>
-          <p className="muted" style={{ marginBottom: 12 }}>
-            {t.staffEquipment.intro}
-          </p>
           <div className="search-bar">
             <label className="visually-hidden" htmlFor="staff-eq-search">
               {t.staffEquipment.search}
@@ -259,9 +255,6 @@ export function ReportForm({ qrCode }: { qrCode: string }) {
         </div>
         {done.whatsapp.contacts.length > 0 && (
           <Section title={t.whatsapp.sendTitle}>
-            <p className="muted" style={{ marginBottom: 8 }}>
-              {t.report.alsoWhatsApp}
-            </p>
             <Rows isEmpty={false} empty="">
               {done.whatsapp.contacts.map((c) => (
                 <Row
@@ -272,9 +265,6 @@ export function ReportForm({ qrCode }: { qrCode: string }) {
                 />
               ))}
             </Rows>
-            <p className="help" style={{ marginTop: 8 }}>
-              {t.whatsapp.help}
-            </p>
           </Section>
         )}
         <div className="actions">

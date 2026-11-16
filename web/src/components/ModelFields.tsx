@@ -65,7 +65,6 @@ export function ModelFields({
         unit={m.pmsUnit}
         onChange={(pmsEvery, pmsUnit) => setM({ ...m, pmsEvery, pmsUnit })}
         error={errs.pmsEvery ?? errs.pmsUnit}
-        help={t.models.pmsEveryHelp}
       />
       <ModelPhotoField currentFileId={currentPhotoId} name={`${m.manufacturer} ${m.model}`.trim()} file={photo} onFile={setPhoto} error={errs.photo} />
     </>
