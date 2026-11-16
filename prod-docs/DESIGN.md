@@ -91,7 +91,7 @@ Phone:
 +----------------------------------+
 ```
 
-- Bottom bar: Home, Equipment, Breakdowns, PMS, More. Active item: teal bar above its label.
+- Bottom bar: Home, Equipment, Breakdowns, PMS, More. Active item: teal bar above its label. One equal column per item (5 for the Biomed team, 4 for staff); icons on one line at a fixed height, labels 12 px on one line under them (11 px on 320 px phones).
 - More: Manuals, Hospital setup, Reports, Settings, My account, Sign out.
 - Desktop (≥ 960 px): navy left sidebar: Home, Equipment, Breakdowns, PMS, Manuals, Scan; then Hospital setup, Reports, Settings.
 - **Hospital setup**: one item; its screens (Models, Departments, Service providers, Team for Admin and Lead) have "Hospital setup" as the title with that screen's add button, and tab links under it (same look as other tabs: teal underline on the current one). Pages use the full width beside the sidebar up to 1440 px (`--w-page`); forms stay 560 px wide.
@@ -127,7 +127,7 @@ Phone:
 
 **Settings**: tabs Hospital, Calendar and phone, Emails, Home alerts, Staff reports, Notifications. Desktop: tab list on the left (teal left bar on the active tab), the tab's form on the right; phone: tabs scroll sideways above the form. Each tab has one "Save changes" and shows when settings were last saved. On/off settings are switches.
 
-**My account**: a navy profile band (initials in a teal circle, name, username, role pill); then cards: Password, Notifications (status on this device, Turn on / Send a test / Turn off; iPhone hint), Your details, Sign out. Two columns from 1100 px.
+**My account**: a navy profile band (initials in a teal circle, name, username, role pill); then cards with an icon and a title only (no explanation lines): Password, Notifications (status on this device, Turn on / Send a test / Turn off; iPhone hint), Your details. Two columns from 1100 px. Under the cards a red-outline "Sign out" button with its icon (full width on phones), nothing else.
 
 **Report a problem** (hospital staff): intro line, one large "Scan a label" button, "Call the Biomedical Department", the last three reports. From a label: the equipment in a teal-edged box, one "What is wrong?" box, "Send to Biomedical team". After sending: confirmation, breakdown number, WhatsApp buttons for team members, "Report another problem".
 
@@ -157,7 +157,7 @@ Phone:
 - **File row** (manuals, documents): a 44 px teal-wash square with a file icon (PDF or image) at the start; title; kind (and model link on Manuals); "PDF, 37 KB" and the added date. Outlined buttons with icons on the right: Open, Download, and Remove (red outline) where allowed; on phones (< 720 px) they sit under the text. The row itself is not a link.
 - **Section header actions** ("Upload manual", "Add coverage", "Print service history"): small outlined navy buttons, never bare text.
 - **Buttons** have a hover state (light grey fill; primary slightly lighter; danger red wash) and move down 1 px when pressed.
-- **Install popup** (phones and tablets, after sign-in): centred white card on a dimmed page, 400 px wide; app icon 64 px, "Install BMServ", hospital and department; one line; three points with teal-wash round icons; full-width "Install app" and "Not now". iPhone: numbered steps (Share, Add to Home Screen, Add) and "Got it". Close button top right; Escape closes.
+- **Install popup** (phones and tablets, after sign-in): centred white card on a dimmed page, 400 px wide; app icon 64 px, "Install BMServ", hospital and department; one line; three points with teal-wash round icons; full-width "Install app" and "Not now". iPhone and iPad show the same card with "Install app"; tapping it turns the card into numbered steps (Share, or ••• then Share on newer iPhones; Add to Home Screen; Add) and "Got it". Apple gives websites no install question, so a one-tap install is not possible there. Close button top right; Escape closes.
 - **Chips** (Reports period): pill buttons, white with a grey border; the chosen one navy.
 - **Reports screen**: title with "Download PDF" (outlined) and "Download PowerPoint" (primary); period chips; the report: navy cover (logo on a white tile, hospital name, "Biomedical Department report", period, prepared date), then sections with a teal underline: Key figures (stat tiles, 4 across on wide screens), Highlights (bullets), Breakdowns (paired monthly columns navy + teal, ranked bars, small tables), Service providers (table), PMS, Warranty and contracts, Equipment, Other activity. Print: A4, no app frame, sections never split.
 - **Add equipment, Warranty box**: bordered box "Warranty" with "Under warranty" ticked; start date and length side by side; a teal-wash line "Warranty until 30 Sep 2027" with the PMS frequency from the model.

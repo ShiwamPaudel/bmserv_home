@@ -523,6 +523,20 @@ a.stat-tile:hover {
 .card-head h2 {
   font-size: var(--fs-row);
 }
+.card-head-plain {
+  align-items: center;
+}
+/* My account: Sign out on its own, red outline, under the cards. */
+.btn.account-signout {
+  margin-top: var(--s5);
+  width: 100%;
+}
+@media (min-width: 700px) {
+  .btn.account-signout {
+    width: auto;
+    min-width: 200px;
+  }
+}
 .card-icon {
   width: 36px;
   height: 36px;

@@ -225,12 +225,12 @@ export function Layout() {
         {main.map((i) => (
           <NavLink key={i.to} to={i.to} end={i.end}>
             <i.icon {...iconProps} />
-            {i.label}
+            <span className="bottombar-label">{i.label}</span>
           </NavLink>
         ))}
         <NavLink to="/more" className={moreActive ? "active" : undefined}>
           <Menu {...iconProps} />
-          {t.nav.more}
+          <span className="bottombar-label">{t.nav.more}</span>
         </NavLink>
       </nav>
     </>
@@ -313,7 +313,7 @@ function StaffLayout() {
         {items.map((i) => (
           <NavLink key={i.to} to={i.to} end={i.end}>
             <i.icon {...iconProps} />
-            {i.label}
+            <span className="bottombar-label">{i.label}</span>
           </NavLink>
         ))}
       </nav>

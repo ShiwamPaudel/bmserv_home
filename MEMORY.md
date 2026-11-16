@@ -115,7 +115,7 @@ web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.i
 | D43 | New equipment: optional `warranty` in POST /equipment, default 1 year from installation (ends start + 12 months − 1 day), provider = equipment's provider, PMS from the model; same transaction (`insertCoverage`) | Owner, 2026-11-16 |
 | D44 | PMS "due" filter kept as "all from today" (Home, CSV); the screen uses soon (Settings window) and upcoming (to 12 months) | No change to Home or export |
 | D45 | "Hospital setup" groups Models, Departments, Service providers, Team; routes unchanged, tabs are links (`SetupTabs`) | Owner, 2026-11-16 |
-| D46 | Install popup: event caught at app start (`lib/install.ts`); phones/tablets only (coarse pointer, < 960 px); "Not now" snoozes 7 days | The event often fired on sign-in, before the layout existed |
+| D46 | Install popup: event caught at app start (`lib/install.ts`); phones/tablets only (coarse pointer, < 960 px); "Not now" snoozes 7 days. iPhone/iPad get the same "Install app" button, which shows the Add to Home Screen steps | The event often fired on sign-in, before the layout existed. Safari has no install API, so no true one-tap install on iOS |
 | D37 | Manuals are managed only on the model page (`/models/:id`); the equipment page lists them read-only with "Open model". Manual lists filter manual kinds (a model also owns its photo) | Owner: one manual per model, many units |
 
 ## 6. Open questions for the owner
@@ -147,6 +147,7 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 - `tsx watch` started by `concurrently` (npm run dev) never runs the server on Windows; the server dev script uses `node --watch --import tsx src/index.ts` instead.
 - Drizzle writes `${table.col}` without the table name in single-table selects, so a correlated subquery `(select count(*) from equipment e where e.x = ${departments.id})` compared `e.x` with `e.id` (counts were always 0). Use `ref(col)` from `server/src/lib/sqlRef.ts`.
 - Long bash heredocs with JS template strings sometimes fail to parse in this shell; write the script to a file instead.
+- Headless Chrome fires `beforeinstallprompt` even with an iPhone user agent; to test the iPhone install popup, stop that event in a capture listener added before the page loads.
 - The offline cache (`lib/offlineCache.ts`) restores old API shapes before the fresh fetch; new fields can be undefined on first render after an update (now the key changes per build).
 - Git Bash rewrites arguments like `/team` into Windows paths; use `MSYS_NO_PATHCONV=1`.
 - A browser `fetch` of an R2 file fails: `/api/files/:id/image` redirects cross-origin (Origin becomes "null") and the bucket CORS may not allow GET. `<img>` works (no CORS); for bytes in the browser (PowerPoint logo) read through the server (`/api/hospital-logo`).
@@ -157,6 +158,8 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 
 Newest first: date, what changed, docs touched.
 
+- 2026-11-16 — My account: removed card explanation lines, the "You get notified when" block and the Sign out card; Sign out is one red-outline button. Docs: DESIGN, MEMORY.
+- 2026-11-16 — Install app button on iPhone too (opens the steps); bottom bar alignment (one column per item, fixed icon line, one-line labels; staff bar had 4 items in 5 columns). Docs: PRD, DESIGN, MEMORY.
 - 2026-11-16 — Reports (period, highlights, PDF and PowerPoint with logo), hospital logo (migration 0005), Hospital setup menu, 1-year default warranty on new equipment, coverage on rows and filters, PMS Due soon/Upcoming, install popup, model search, form alignment. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Hospital staff departments + staff Equipment tab (migration 0004), My reports includes reports added to an open breakdown, Print labels redesigned inside the app, file rows with real buttons and type icons, section actions as outlined buttons, button hover states. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Model page (photo, PMS, manuals once per model, its equipment); manuals no longer uploaded from equipment pages; manual lists exclude the model photo. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.

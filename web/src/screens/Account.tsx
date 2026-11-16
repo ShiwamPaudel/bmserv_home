@@ -44,36 +44,30 @@ export function Account() {
       {u.mustChangePassword && <Notice tone="wait">{t.account.tempPasswordNotice}</Notice>}
 
       <div className="account-grid">
-        <Card icon={<KeyRound {...iconProps} />} title={t.account.security} help={t.account.securityHelp}>
+        <Card icon={<KeyRound {...iconProps} />} title={t.account.security}>
           <PasswordForm />
         </Card>
-        <Card icon={<Bell {...iconProps} />} title={t.notifications.title} help={t.notifications.help}>
+        <Card icon={<Bell {...iconProps} />} title={t.notifications.title}>
           <Notifications />
         </Card>
-        <Card icon={<UserRound {...iconProps} />} title={t.account.details} help={t.account.detailsHelp}>
+        <Card icon={<UserRound {...iconProps} />} title={t.account.details}>
           <DetailsForm />
         </Card>
-        <Card icon={<LogOut {...iconProps} />} title={t.app.signOut} help={t.account.signOutHelp}>
-          <div>
-            <button className="btn" onClick={() => void signOut()}>
-              {t.app.signOut}
-            </button>
-          </div>
-        </Card>
       </div>
+      <button className="btn danger account-signout" type="button" onClick={() => void signOut()}>
+        <LogOut {...iconProps} />
+        {t.app.signOut}
+      </button>
     </>
   );
 }
 
-function Card({ icon, title, help, children }: { icon: React.ReactNode; title: string; help: string; children: React.ReactNode }) {
+function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
     <section className="card">
-      <div className="card-head">
+      <div className="card-head card-head-plain">
         <span className="card-icon">{icon}</span>
-        <div>
-          <h2>{title}</h2>
-          <p className="muted secondary">{help}</p>
-        </div>
+        <h2>{title}</h2>
       </div>
       {children}
     </section>
@@ -171,7 +165,6 @@ function Notifications() {
   }, []);
 
   const key = info.data?.publicKey ?? me.data?.pushPublicKey ?? null;
-  const staff = me.data?.user.role === "staff";
   const otherDevices = Math.max(0, (info.data?.devices ?? 0) - (state === "on" ? 1 : 0));
 
   async function run(fn: () => Promise<PushState>, done: string) {
@@ -215,10 +208,6 @@ function Notifications() {
       </div>
       {state === "blocked" && <Notice tone="bad">{t.notifications.blocked}</Notice>}
       {error && <Notice tone="bad">{error}</Notice>}
-      <div>
-        <div className="fact-label">{t.notifications.whatYouGet}</div>
-        <div className="secondary">{staff ? t.notifications.staffEvents : t.notifications.teamEvents}</div>
-      </div>
       {otherDevices > 0 && <p className="muted secondary">{t.notifications.otherDevices(otherDevices)}</p>}
       <div className="actions" style={{ margin: 0 }}>
         {state === "on" ? (

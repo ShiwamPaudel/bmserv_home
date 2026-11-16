@@ -134,23 +134,47 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--paper);
   border-top: 1px solid var(--line);
+  /* One equal column per item: 5 for the Biomed team, 4 for hospital staff. */
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
 }
+/* Icons sit on one line at a fixed height and labels on one line below, whatever the label length. */
 .bottombar a,
 .bottombar button {
   position: relative;
+  min-width: 0;
+  height: var(--h-bottombar);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: var(--fs-small);
+  justify-content: flex-start;
+  padding: 10px 2px 0;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 16px;
   color: var(--muted);
   text-decoration: none;
   background: none;
   border: 0;
   cursor: pointer;
+}
+.bottombar svg {
+  flex: none;
+  display: block;
+}
+.bottombar-label {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The smallest phones (320px): "Breakdowns" still fits on one line. */
+@media (max-width: 340px) {
+  .bottombar a {
+    font-size: 11px;
+    padding-inline: 0;
+  }
 }
 .bottombar .active {
   color: var(--navy);

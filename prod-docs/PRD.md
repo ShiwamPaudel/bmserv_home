@@ -208,7 +208,7 @@ Each line opens what it describes. Nothing to show: say so plainly.
 - Download equipment, breakdowns and PMS lists as CSV.
 
 ### F15. Installable app
-- Installs to the home screen on Android, iOS and desktop. On phones and tablets, after sign-in, a popup offers **Install app** (Android) or shows the Add to Home Screen steps (iPhone, iPad); "Not now" hides it for a week; never shown once installed or on desktop.
+- Installs to the home screen on Android, iOS and desktop. On phones and tablets, after sign-in, a popup offers **Install app**: on Android it opens the browser's install question; on iPhone and iPad (no install question for websites) it shows the three Add to Home Screen taps; "Not now" hides it for a week; never shown once installed or on desktop.
 - Offline: opens and shows what was last loaded, read-only, with "You are offline". Saving and opening manuals need a connection.
 - **Notifications (Web Push)**: each person turns them on per device under My account (iPhone: after adding BMServ to the Home Screen) and can send a test. The Biomedical team is notified of every new breakdown (except the one who recorded it); the person who recorded or reported a breakdown is notified when it is fixed or cannot be repaired. Settings can turn each off.
 

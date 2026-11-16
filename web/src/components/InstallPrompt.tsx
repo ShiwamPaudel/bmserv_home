@@ -1,5 +1,6 @@
-// Install BMServ: a popup on phones and tablets after sign-in. Android uses the browser's install question;
-// iPhone and iPad have none, so the popup shows the Add to Home Screen steps instead.
+// Install BMServ: a popup on phones and tablets after sign-in, with an Install app button on every phone.
+// Android: the button opens the browser's own install question. iPhone and iPad give websites no install
+// question, so there the button turns the popup into the three Add to Home Screen taps.
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { Bell, Share, SquarePlus, Smartphone, WifiOff, X } from "lucide-react";
@@ -15,7 +16,7 @@ export function InstallPrompt() {
   const offer = useInstallOffer();
   const me = useMe();
   const titleId = useId();
-  const [open, setOpen] = useState<"install" | "ios" | null>(null);
+  const [open, setOpen] = useState<"install" | "ios" | "iosSteps" | null>(null);
 
   useEffect(() => {
     if (open || !isMobileDevice() || isInstalled() || installLaterActive()) return;
@@ -44,6 +45,10 @@ export function InstallPrompt() {
   }
 
   async function install() {
+    if (open === "ios") {
+      setOpen("iosSteps");
+      return;
+    }
     const accepted = await promptInstall();
     if (!accepted) installLater();
     setOpen(null);
@@ -69,9 +74,9 @@ export function InstallPrompt() {
             )}
           </div>
         </div>
-        <p className="install-intro">{t.pwa.installIntro}</p>
+        <p className="install-intro">{open === "iosSteps" ? t.pwa.iosHow : t.pwa.installIntro}</p>
 
-        {open === "install" ? (
+        {open !== "iosSteps" ? (
           <>
             <ul className="install-points">
               <li>
