@@ -63,6 +63,13 @@ export async function putObject(key: string, body: string | Uint8Array, contentT
   await s3().send(new PutObjectCommand({ Bucket: env().R2_BUCKET, Key: key, Body: body, ContentType: contentType }));
 }
 
+/** Bytes of a small object (the hospital logo), read by the server so the browser needs no CORS. */
+export async function getObjectBytes(key: string): Promise<{ bytes: Uint8Array; contentType: string | undefined }> {
+  const out = await s3().send(new GetObjectCommand({ Bucket: env().R2_BUCKET, Key: key }));
+  if (!out.Body) throw new Error("Empty object");
+  return { bytes: await out.Body.transformToByteArray(), contentType: out.ContentType };
+}
+
 export async function getObjectText(key: string): Promise<string> {
   const out = await s3().send(new GetObjectCommand({ Bucket: env().R2_BUCKET, Key: key }));
   return (await out.Body?.transformToString()) ?? "";

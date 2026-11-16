@@ -100,11 +100,15 @@ export function highlights(r: ReportData): string[] {
   return out;
 }
 
-/** The hospital logo as a data URL with its size, for the PowerPoint (null when there is none or it fails). */
+/**
+ * The hospital logo as a data URL with its size, for the PowerPoint (null when there is none or it fails).
+ * Read through our own server: a browser fetch of the R2 link is blocked by CORS (a redirect sends Origin: null,
+ * and the bucket may allow only uploads).
+ */
 export async function logoForExport(fileId: string | null): Promise<{ data: string; w: number; h: number } | null> {
   if (!fileId) return null;
   try {
-    const res = await fetch(`/api/files/${fileId}/image`, { credentials: "include" });
+    const res = await fetch("/api/hospital-logo", { cache: "no-store" });
     if (!res.ok) return null;
     const blob = await res.blob();
     const data = await new Promise<string>((resolve, reject) => {

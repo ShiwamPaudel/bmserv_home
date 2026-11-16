@@ -72,9 +72,6 @@ export function ReportsScreen() {
             </button>
           </div>
         </PageHead>
-        <p className="muted" style={{ marginBottom: 12 }}>
-          {t.reports.intro}
-        </p>
         <div className="report-range" role="group" aria-label={t.reports.period}>
           {[...presets, "custom" as const].map((p) => (
             <button

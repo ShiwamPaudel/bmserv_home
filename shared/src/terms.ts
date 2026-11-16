@@ -270,7 +270,6 @@ export const t = {
   // Hospital staff: report a problem from a label
   reports: {
     title: "Reports",
-    intro: "What happened in the Biomedical Department over a period: for the monthly management report and for monthly, quarterly or annual meetings.",
     period: "Period",
     presets: {
       thisMonth: "This month",

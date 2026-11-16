@@ -183,7 +183,7 @@ REST + JSON under `/api`. Session required except `/api/auth/*`, `/api/jobs/*` a
 | PMS | `GET /api/pms`, `PATCH /api/pms/:id`, `POST /api/pms/:id/done`, `POST /api/pms/:id/remind` |
 | Breakdowns | `GET/POST /api/breakdowns`, `GET /api/breakdowns/:id`, `POST /:id/notes`, `GET /:id/recipients/default`, `POST /:id/ask-provider`, `PUT /:id/recipients`, `POST /:id/send-now`, `POST /:id/pause`, `POST /:id/resume`, `POST /:id/close`, `PATCH /:id/assign` (all under `/api/breakdowns`) |
 | Home | `GET /api/home` (attention lists + `stats` for the overview charts) |
-| Reports | `GET /api/reports?from=&to=` (team; `services/reports.ts` computes everything for the period; at most 3 years) |
+| Reports | `GET /api/hospital-logo` (the logo bytes read from R2 by the server, for the PowerPoint; no CORS needed), `GET /api/reports?from=&to=` (team; `services/reports.ts` computes everything for the period; at most 3 years) |
 | Export | `GET /api/export/:list.csv` |
 | Jobs | `GET` or `POST /api/jobs/tick` with `Authorization: Bearer JOB_SECRET` (or `CRON_SECRET` from Vercel Cron) |
 

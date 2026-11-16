@@ -83,6 +83,11 @@ register.get("/files/:id/image", async (c) => {
   c.header("Cache-Control", "private, max-age=3000");
   return c.redirect(await files.photoLink(c.req.param("id")), 302);
 });
+register.get("/hospital-logo", async () => {
+  const logo = await files.hospitalLogo();
+  if (!logo) throw notFound();
+  return new Response(logo.bytes, { headers: { "content-type": logo.contentType, "cache-control": "private, max-age=300" } });
+});
 register.get("/files/:id/link", async (c) => c.json(await files.fileLink(c.req.param("id"), query(c, "download") === "1")));
 register.post("/files/:id/remove", requireAction("file.remove"), async (c) =>
   c.json(await files.removeFile(c.get("actor"), c.req.param("id"))),

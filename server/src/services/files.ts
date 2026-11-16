@@ -8,7 +8,7 @@ import { breakdowns, coverage, equipment, equipmentModels, files, pmsVisits, set
 import { badRequest, forbidden, notFound } from "../lib/errors";
 import { newId } from "../lib/ids";
 import type { Actor } from "../lib/http";
-import { deleteObject, headObject, presignGet, presignPut } from "../lib/r2";
+import { deleteObject, getObjectBytes, headObject, presignGet, presignPut } from "../lib/r2";
 import { ref } from "../lib/sqlRef";
 
 /** Which kinds may be attached to which owner. */
@@ -142,6 +142,17 @@ export async function photoLink(id: string): Promise<string> {
   const f = found[0];
   if (!f || f.removedAt || f.status !== "ready" || f.kind !== "photo") throw notFound();
   return presignGet(f.storageKey, f.fileName, f.mimeType, false, 60 * 60);
+}
+
+/** The hospital logo's bytes, served from our own address (exports in the browser read it without CORS). */
+export async function hospitalLogo(): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+  const db = getDb();
+  const s = (await db.select({ logoFileId: settings.logoFileId }).from(settings).where(eq(settings.id, 1)))[0];
+  if (!s?.logoFileId) return null;
+  const f = (await db.select().from(files).where(eq(files.id, s.logoFileId)))[0];
+  if (!f || f.removedAt || f.status !== "ready") return null;
+  const { bytes, contentType } = await getObjectBytes(f.storageKey);
+  return { bytes, contentType: contentType ?? f.mimeType };
 }
 
 export async function fileLink(id: string, download: boolean) {

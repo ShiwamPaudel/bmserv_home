@@ -215,6 +215,9 @@ describe("hospital logo", () => {
     expect(ok.json.uploadUrl).toContain("hospital/1/");
     expect((await ctx.admin.call<Any>("GET", "/settings")).json).toHaveProperty("logoFileId", null);
     expect((await ctx.staff.call<Any>("GET", "/me")).json.hospital).toHaveProperty("logoFileId", null);
+    // The exports read the logo through the server; none yet (the upload above was never finished).
+    expect((await ctx.lead.call("GET", "/hospital-logo")).status).toBe(404);
+    expect((await ctx.staff.call("GET", "/hospital-logo")).status).toBe(403);
   });
 });
 
