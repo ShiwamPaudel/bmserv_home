@@ -14,9 +14,9 @@ Installable web app for a hospital Biomedical Department: equipment register by 
 - Phase 5 (owner feedback): hospital staff departments and their Equipment list, Models screen + PMS frequency on the model (days/months/years), Hospital staff role and Report a problem from the QR, Web Push notifications, WhatsApp buttons, phone country codes, required provider contacts, Home overview charts, Settings tabs, My account redesign, full-width desktop, count bug fix.
 - Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo, 0004_staff_departments) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
 - Checked: the Vercel bundle (`.vercel/output`) run locally against live Turso; signed in as the live Admin; every screen opens without errors.
-- **Not yet**: Vercel deploy (owner is setting up the Vercel project, preset Other; add the VAPID values too), Vercel address in R2 CORS, Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
+- **Not yet**: Vercel deploy (project set up with preset Other and environment values; needs the code on GitHub), Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
 - VAPID keys were generated into `.env.local` (2026-11-13). `.env.example` is now gitignored at the owner's request (local template only).
-- R2 CORS works for localhost (a manual was uploaded from the browser on 2026-11-16); add the Vercel address to it after deploy.
+- R2 CORS allows localhost and the hosted domain; on Vercel, `APP_URL` and `BETTER_AUTH_URL` are set to the hosted domain (owner, 2026-11-16). `.env.local` keeps both on http://localhost:5173.
 - Live address: none yet. Local: `npm run dev` → http://localhost:5173.
 - Next step: owner creates the Vercel project (push to GitHub first) → deploy (ARCHITECTURE section 12) → try as Admin, Lead, Engineer → tick the "Deployed" boxes in PHASES.md → commit.
 
