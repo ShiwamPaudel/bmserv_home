@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `date_display` text DEFAULT 'bs' NOT NULL;

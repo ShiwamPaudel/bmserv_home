@@ -1,0 +1,143 @@
+# BMServ — Memory
+
+The map of this project. Read first, update last, every session (prod-docs/RULES.md section 2). Under about 200 lines.
+
+Last updated: 2026-11-16 (Phases 1–5 built locally; not deployed, not committed)
+
+## 1. In one paragraph
+
+Installable web app for a hospital Biomedical Department: equipment register by department, manuals library per model on R2, QR labels, recorded moves, breakdowns emailed to the service provider once a day at 08:00 Nepal time until fixed (pausable), coverage (warranty/AMC/CMC), PMS reminders. One install per hospital; this one is ABC Hospital. Hono + Turso + R2 + Resend + Better Auth; React + Vite PWA; hosted on Vercel. Built by Infobytes Nepal.
+
+## 2. Current state
+
+- Phases 1–5 are **built and pass `npm run check`** (types, lint, 95 tests). Go-live steps of Phase 4 are not done.
+- Phase 5 (owner feedback): Models screen + PMS frequency on the model (days/months/years), Hospital staff role and Report a problem from the QR, Web Push notifications, WhatsApp buttons, phone country codes, required provider contacts, Home overview charts, Settings tabs, My account redesign, full-width desktop, count bug fix.
+- Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo applies on next server start) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
+- Checked: the Vercel bundle (`.vercel/output`) run locally against live Turso; signed in as the live Admin; every screen opens without errors.
+- **Not yet**: Vercel deploy (owner adds GitHub + Vercel later; add the VAPID values too), R2 CORS policy (owner sets it in the dashboard), Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
+- VAPID keys were generated into `.env.local` (2026-11-13). `.env.example` is now gitignored at the owner's request (local template only).
+- **R2 CORS is still not set** (preflight from localhost refused, 2026-11-16): browser uploads (manuals, documents, model photos) fail until the owner sets it (ARCHITECTURE section 12).
+- Live address: none yet. Local: `npm run dev` → http://localhost:5173.
+- Next step: owner sets R2 CORS + creates the Vercel project → deploy (ARCHITECTURE section 12) → try as Admin, Lead, Engineer → tick the "Deployed" boxes in PHASES.md → commit.
+
+## 3. Where to look
+
+| Need | Open |
+|---|---|
+| Feature behaviour, permissions, email wording, problem statement | prod-docs/PRD.md |
+| Tables, routes, folders, env values, service rules, deploy | prod-docs/ARCHITECTURE.md |
+| Colours, type, components, wording, QR label, logos | prod-docs/DESIGN.md |
+| Build order and progress | prod-docs/PHASES.md |
+| How to work, when to update docs | prod-docs/RULES.md |
+| Run locally, deploy, R2 CORS, new hospital | prod-docs/ARCHITECTURE.md section 12 (README only says what BMServ is) |
+
+## 4. File map
+
+```
+/                    CLAUDE.md MEMORY.md README.md .env.example vercel.json package.json (workspaces)
+prod-docs/           PRD, ARCHITECTURE, DESIGN, PHASES, RULES
+assets/logos/        the three original logo PNGs;  assets/images/  the two sign-in photos (originals)
+demo_to_use_imgs/    demo screenshots (logo splash, sign-in, Home) — not used by the app
+shared/src/          terms.ts (all words) enums.ts permissions.ts dates.ts (BS/AD, Nepal today, month buckets) pms.ts (days/months/years) phone.ts (country codes, wa.me) keys.ts csv.ts schemas/ (Zod; report.ts) shared.test.ts
+server/src/          app.ts (Hono app, routes, errors, /health, /api/jobs/tick) index.ts (Node entry) vercel.ts (Vercel entry) env.ts auth.ts
+server/src/db/       schema/{auth,app}.ts client.ts migrate.ts seed.ts migrations/
+server/src/routes/   report.ts (report, my-reports, push) core.ts (me, team, settings, departments, providers, models) register.ts (equipment, moves, files, coverage, PMS, import, export, home) breakdowns.ts
+server/src/services/ one file per subject: team settings departments providers models equipment equipmentRows moves files coverage pms breakdowns history home (+ dashboard stats) importer exportCsv activity push (only web-push caller) notify (who hears about a breakdown) report (staff reports)
+server/src/lib/      http.ts (session, roles, staffGate) sqlRef.ts (ref(): table-qualified column for subqueries) errors ids r2
+server/src/emails/   send.ts (only Resend caller: log + dedupe + redirect) templates.ts (PRD 6 wording) recipients.ts
+server/src/jobs/     tick.ts (the scheduled work) scheduler.ts (node-cron, non-Vercel hosts)
+server/src/scripts/  check-services.ts r2-cors.ts migrate.ts vercel-output.ts (Build Output API)
+server/src/test/     setup.ts (in-memory libSQL, fake email + push transports, signed-in roles incl. staff) auth.test.ts rules.test.ts staff.test.ts
+web/src/app/         App.tsx (routes; TeamOnly group) Layout.tsx (top bar, bottom bar, sidebar, guard, StaffLayout, TeamOnly/TeamOr, PWA prompts)
+web/src/screens/     SignIn Home (overview + attention) Account Team Settings (tabs) More Models (list + ModelPage) Departments Providers Manuals Pms Scan Report (staff) PrintLabels equipment/ breakdowns/
+web/src/components/  ui.tsx (Pill Row(thumb) Fact fields PhoneField Switch WhatsAppButton Sheet Confirm Toast) charts.tsx ModelPhoto (thumb, picker) ModelFields PmsFrequencyField DateField EquipmentLine files (upload) pmsSheets EmailRows
+web/src/lib/         api.ts types.ts queryKeys.ts hooks.ts dates.tsx upload.ts offlineCache.ts auth.ts push.ts (browser push) image.ts (shrink photos)
+web/src/print/       labelSheet.ts (+test) label.css
+web/src/styles/      tokens.css base.css screens.css
+web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.ico push-sw.js (push handlers, imported by the service worker)
+```
+
+## 5. Decisions
+
+| # | Decision | Why |
+|---|---|---|
+| D1 | One install per hospital; hospital details in `settings` (ABC Hospital) | Owner's choice |
+| D2 | Live Turso, R2, Resend from Phase 1; tests use in-memory libSQL only | Owner: no local database |
+| D3 | `EMAIL_REDIRECT_TO` sends every email to the owner until go-live | Real service providers are not emailed while building |
+| D4 | Host **Vercel**: Build Output API (static web + one Node function); migrations run in the build; no Docker; daily Vercel Cron 02:15 UTC (08:00 NPT) calls `/api/jobs/tick`; node-cron only on always-on hosts | Owner chose Vercel; Hobby crons are daily only |
+| D5 | Better Auth with `username` plugin, sign-up off; **admin plugin not used**: accounts made via the internal adapter, deactivation = `banned` + sessions deleted + a session-create hook | Our roles (lead) don't fit the plugin; plain refusal message |
+| D6 | Dates stored AD; **shown in one calendar chosen in Settings (Nepali BS default, or English AD)** on screens, pickers and emails | Owner, 2026-11-13 |
+| D7 | Manuals belong to the model | PRD problem 2 |
+| D8 | Files go browser → R2 with presigned PUT; manuals 200 MB, others 20 MB | Large manuals |
+| D9 | Breakdown emails to service department emails + designated service engineers, editable; **once a day at 08:00** (setting) until fixed or paused | Owner, 2026-11-13 |
+| D10 | Any team member pauses/resumes; "Send now" also works while paused | Manual action, logged |
+| D11 | PMS every N months from coverage start; reminders grouped per provider per due date and sent at the daily email time | Fewer, morning emails |
+| D12 | QR label A7 105 × 74.25 mm, 8 per A4, start position; QR `{APP_URL}/e/{code}` | 12.5 % of A4 |
+| D13 | Navy `#19445B`, teal `#2DD4BF`; teal never text on white | Contrast |
+| D14 | Coverage types Warranty, AMC, CMC | Common in Nepal |
+| D15 | All tables in the Phase 1 migration; later changes are new migrations | Live data |
+| D16 | Extra columns beyond the spec: `name_key` (departments, providers), `hospital_tag_key`, `coverage.end_processed_at`, `breakdowns.last_email_at`, `files.purged_at`, `email_log.provider_id` + status `sending`, `user.must_change_password`, `settings.date_display`; table `rate_limit` | Uniqueness, once-an-hour rule, provider email list, DB-backed sign-in rate limit on serverless |
+| D17 | A failed email may be retried under the same dedupe key (claimed atomically) | Daily email still goes after a Resend hiccup |
+| D18 | Several unresolved breakdowns per equipment are allowed; the form warns and links the existing one | PRD says "last unresolved breakdown" |
+| D19 | Editing coverage replaces future scheduled PMS; a changed PMS date gets a new reminder | Generated rows, not records |
+| D20 | React Router 7 (v8 needs Node ≥ 22.22; machine has 22.18). TypeScript 6.0 (typescript-eslint supports < 6.1) | Toolchain compatibility |
+| D21 | BS picker = day, month, BS year selects; AD mode = native date input; BS range 2000–2090 (`nepali-date-converter`) | Plainest working picker |
+| D22 | Icons `lucide-react` (1.5 px stroke, 20 px); QR scanning with `jsqr` + camera | One outline set; small reader |
+| D23 | Offline: service worker caches the shell; last query data kept in localStorage (`offlineCache.ts`); saving disabled | PRD F15 without extra deps |
+| D24 | Sign-in: photo (left half on desktop, top band on phone/tablet) + the diagonal behind the form | Owner supplied photos |
+| D25 | Seeded Admin `admin` ("BMServ Admin", placeholder phone); password only in `.env.local` | Owner asked Claude to fill seed values |
+| D26 | Hospital staff are accounts with role `staff` (email and phone required like everyone); server `staffGate` allows only me, report, my-reports, push | Owner: staff report via phone; PRD said no reporting without an account |
+| D27 | A staff report on equipment with an unresolved breakdown becomes a note on it, not a second breakdown | Avoid duplicates from several nurses |
+| D28 | Staff report responsible = Settings choice, else first active Lead, else Admin | Breakdown needs `assigned_to` |
+| D29 | Notifications: push to the team on every new breakdown (not the actor); push to the recorder on close; team email only for staff reports (internal, no CC) | Owner: everyone notified; avoid email noise |
+| D30 | web-push 3.6.7 (4.0.0 was a week old and moved to ESM); service worker runs under `npm run dev` (devOptions) | Stability; local testing |
+| D31 | PMS frequency on the model (required for new models, months default); coverage copies it and may change it; `coverage.pms_every_months` kept but no longer written | Owner; no data loss |
+| D32 | Phones stored "+977 9812345678"; default country code is a setting; wa.me links only | Owner: Nepal default, India sometimes |
+| D33 | Home charts in plain HTML/CSS (no chart library); coverage palette validated with the dataviz validator | Rule: no library under ~30 lines |
+| D34 | Model photo: files row (owner model, kind photo) + `equipment_models.photo_file_id`; replaced photo marked removed+purged and deleted from R2 at once; shrunk to 1280 px JPEG in the browser; `<img>` via `/api/files/:id/image` redirect | Owner, 2026-11-16; fast thumbnails |
+| D35 | Offline cache key includes the build (`__APP_BUILD__`); older caches are dropped on start | Old Home data without `stats` crashed Home |
+| D36 | README only describes BMServ; setup and deploy live in ARCHITECTURE section 12; `.env.example` is gitignored | Owner, 2026-11-16 |
+| D37 | Manuals are managed only on the model page (`/models/:id`); the equipment page lists them read-only with "Open model". Manual lists filter manual kinds (a model also owns its photo) | Owner: one manual per model, many units |
+
+## 6. Open questions for the owner
+
+- Nepali mode shows only BS dates (no AD beside). Keep it, or show AD muted beside BS as DESIGN first said?
+- Hospital staff need an email address to get an account (Better Auth). OK, or should staff accounts work without email?
+- Replies from service providers: possible with Resend inbound after the domain is verified (would show on the breakdown page). Build it then?
+- Resend sending domain and From address (domain must be verified in Resend).
+- Vercel project address; then R2 CORS for that address.
+- Real hospital details at go-live; is CMC wanted (D14)?
+
+## 7. Installed versions
+
+Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7.22 · drizzle-orm 0.45.4 · drizzle-kit 0.31.11 · @libsql/client 0.18.0 · @aws-sdk/client-s3 + s3-request-presigner 3.1168.0 · resend 6.38.0 · node-cron 4.6.0 · zod 4.6.7 · nanoid 6.0.2 (server) · react 19.3.1 · web-push 3.6.7 (server) · react-router 7.18.5 · @tanstack/react-query 5.107.1 · vite 8.3.8 · @vitejs/plugin-react 6.3.0 · vite-plugin-pwa 2.0.0 · typescript 6.0.3 · vitest 5.1.0 · eslint 10.14.0 · nepali-date-converter 3.4.2 · qrcode 1.5.4 · jsqr 1.4.0 · lucide-react 1.72.0 · esbuild 0.28.2 · tsx 4.23.15
+
+## 8. Gotchas
+
+- `window.scrollTo` returns a promise in current Chrome: never write `useEffect(() => window.scrollTo(...))`; use braces (it crashed Layout).
+- R2 "Object Read & Write" tokens cannot set bucket CORS (`AccessDenied`); set CORS in the dashboard.
+- Resend without a verified domain: From must be `onboarding@resend.dev`; it only delivers to the account's own address.
+- Better Auth 1.7 `internalAdapter.createUser(user, { method: "admin" })` needs the second "source" argument.
+- Vercel reserves `TZ`; dates use `Asia/Kathmandu` explicitly in `shared/dates.ts`.
+- Sign-in is rate limited to 5 a minute per IP (DB-backed); repeated scripted sign-ins get 429.
+- The Vercel bundle aliases `@libsql/client` → `@libsql/client/web` (remote only, no native binary).
+- The original logo PNGs have wide empty margins; the app uses cropped copies in `web/public/brand/`.
+- Sign-in only trusts `APP_URL`. A second `npm run dev` used to start Vite on :5174 and sign-in failed with 403 (shown wrongly as "deactivated"); Vite now uses `strictPort`, and the sign-in screen only says "deactivated" when the server says so.
+- Changing `SEED_ADMIN_PASSWORD` in `.env.local` does not change the stored password; run `npm run db:seed -- --reset-admin-password`.
+- nanoid 6 lives in `server/node_modules` (root has nanoid 3 for another package).
+- `tsx watch` started by `concurrently` (npm run dev) never runs the server on Windows; the server dev script uses `node --watch --import tsx src/index.ts` instead.
+- Drizzle writes `${table.col}` without the table name in single-table selects, so a correlated subquery `(select count(*) from equipment e where e.x = ${departments.id})` compared `e.x` with `e.id` (counts were always 0). Use `ref(col)` from `server/src/lib/sqlRef.ts`.
+- Long bash heredocs with JS template strings sometimes fail to parse in this shell; write the script to a file instead.
+- The offline cache (`lib/offlineCache.ts`) restores old API shapes before the fresh fetch; new fields can be undefined on first render after an update (now the key changes per build).
+- Git Bash rewrites arguments like `/team` into Windows paths; use `MSYS_NO_PATHCONV=1`.
+
+## 9. Change log
+
+Newest first: date, what changed, docs touched.
+
+- 2026-11-16 — Model page (photo, PMS, manuals once per model, its equipment); manuals no longer uploaded from equipment pages; manual lists exclude the model photo. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
+- 2026-11-16 — Model photos (R2, shown beside names), Home crash from old offline data fixed, error screen, README trimmed, `.env.example` gitignored; migration 0003. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
+- 2026-11-13 — Phase 5: Models screen, PMS frequency on models, hospital staff reports, Web Push, WhatsApp, country codes, Home overview, Settings tabs, Account redesign, full width, count fix; migration 0002. Docs: all.
+- 2026-11-13 — Phases 1–4 built: register, manuals/files, QR labels, moves, import/export, breakdowns + daily emails, coverage/PMS, Home, history, PWA; date display setting; sign-in photos; Vercel output. Docs: all.
+- 2026-11-13 — Host set to Vercel; spec files moved to `prod-docs/`; logos to `assets/logos/`.
+- 2026-11-13 — Specs written; four phases; no code yet.

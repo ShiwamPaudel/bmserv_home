@@ -1,0 +1,141 @@
+/* QR label sheet (DESIGN.md section 8). A4 portrait, no margins, 2 x 4 cells of 105 x 74.25 mm. */
+@page {
+  size: A4;
+  margin: 0;
+}
+.label-screen {
+  background: var(--surface);
+  min-height: 100vh;
+  padding: var(--s4);
+}
+.label-controls {
+  max-width: var(--w-form);
+  margin-bottom: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sheet);
+  padding: var(--s4);
+}
+.sheet-a4 {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  background: #fff;
+  color: #000;
+  margin: 0 0 var(--s4);
+  overflow: hidden;
+  page-break-after: always;
+  break-after: page;
+}
+.sheet-a4:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+.preview-wrap {
+  overflow-x: auto;
+}
+@media screen and (max-width: 860px) {
+  .preview-wrap .sheet-a4 {
+    zoom: 0.42;
+  }
+}
+.label-cell {
+  position: absolute;
+  width: 105mm;
+  height: 74.25mm;
+  padding: 6mm;
+  outline: 0.2mm dashed #bbb;
+  outline-offset: -0.1mm;
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+.label-cell.blank {
+  outline-color: #e5e5e5;
+}
+.label-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 14mm;
+  height: 14mm;
+  background: linear-gradient(to bottom right, var(--navy) 50%, transparent 50.5%);
+}
+.label-hospital {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 12pt;
+  line-height: 1.15;
+  padding-left: 6mm;
+}
+.label-dept {
+  font-size: 9pt;
+  padding-left: 6mm;
+}
+.label-body {
+  display: flex;
+  gap: 4mm;
+  margin-top: 3mm;
+}
+.label-qr {
+  width: 36mm;
+  height: 36mm;
+  flex-shrink: 0;
+}
+.label-qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.label-type {
+  font-size: 14pt;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.label-model,
+.label-home {
+  font-size: 9pt;
+  line-height: 1.3;
+}
+.label-serial {
+  font-family: var(--font-serial);
+  font-weight: 500;
+  font-size: 12pt;
+  margin: 2.5mm 0 1.5mm;
+  overflow-wrap: anywhere;
+}
+.label-foot {
+  position: absolute;
+  left: 6mm;
+  right: 6mm;
+  bottom: 4.5mm;
+  font-size: 9pt;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    margin: 0;
+  }
+  .label-screen {
+    padding: 0;
+    background: #fff;
+  }
+  .label-controls {
+    display: none;
+  }
+  .preview-wrap .sheet-a4 {
+    zoom: 1;
+    margin: 0;
+  }
+  .label-cell,
+  .label-cell.blank {
+    outline-color: #ccc;
+  }
+  .label-cell.blank {
+    outline: none;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

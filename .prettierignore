@@ -1,0 +1,5 @@
+node_modules
+dist
+.vercel
+server/src/db/migrations
+*.md

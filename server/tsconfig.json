@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "types": ["node"], "paths": { "@bmserv/shared/*": ["../shared/src/*"] } },
+  "include": ["src", "drizzle.config.ts"]
+}

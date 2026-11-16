@@ -1,0 +1,1 @@
+ALTER TABLE `equipment_models` ADD `photo_file_id` text;

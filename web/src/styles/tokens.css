@@ -1,0 +1,72 @@
+/* Design tokens from DESIGN.md. Colours and sizes come only from here. */
+:root {
+  /* Colour (section 3) */
+  --navy: #19445b;
+  --ink: #12303f;
+  --muted: #52656f;
+  --teal: #2dd4bf; /* fill only, never text on white */
+  --teal-deep: #0b6f66;
+  --teal-wash: #e3f8f5;
+  --paper: #ffffff;
+  --surface: #f3f7f8;
+  --line: #d6dfe4;
+
+  --ok-text: #1b6e43;
+  --ok-bg: #e6f4ec;
+  --bad-text: #a3231b;
+  --bad-bg: #fcebe9;
+  --wait-text: #8a4b00;
+  --wait-bg: #fff0d2;
+  --off-text: #44545c;
+  --off-bg: #e9eef0;
+
+  /* Type (section 4) */
+  /* Charts (DESIGN.md section 13). Status fills for equipment state; coverage uses a 3-slot palette
+     validated for colour-blind separation and 3:1 contrast on white. */
+  --chart-ok: #2e8b57;
+  --chart-bad: #c0392b;
+  --chart-wait: #d98a00;
+  --chart-off: #9aa8af;
+  --chart-1: #2a78d6;
+  --chart-2: #0b8f80;
+  --chart-3: #c2700f;
+  --chart-none: #d6dfe4;
+  --chart-bar: #19445b;
+  --whatsapp: #128c4a;
+
+  --font-head: "Barlow Semi Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+  --font-serial: "IBM Plex Mono", ui-monospace, monospace;
+  --fs-small: 13px;
+  --fs-secondary: 15px;
+  --fs-body: 16px;
+  --fs-row: 18px;
+  --fs-title: 22px;
+  --fs-signin: 28px;
+  --lh-text: 1.45;
+  --lh-title: 1.2;
+
+  /* Spacing and shape (section 5) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --r-control: 6px;
+  --r-sheet: 10px;
+  --r-pill: 999px;
+  --tap: 44px;
+  --row-min: 56px;
+  --w-list: 880px;
+  --w-page: 1440px; /* desktop pages use the full width up to this */
+  --w-form: 560px;
+  --w-sidebar: 232px;
+  --h-topbar: 56px;
+  --h-bottombar: 60px;
+  --shadow-sheet: 0 8px 32px rgba(18, 48, 63, 0.18);
+
+  /* Motion (section 11) */
+  --t-sheet: 160ms;
+  --t-dialog: 120ms;
+}
