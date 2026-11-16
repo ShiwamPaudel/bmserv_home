@@ -26,11 +26,18 @@ export type YMD = { year: number; month: number; day: number }; // month 1-12
 
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/** A UTC date for any year. Date.UTC reads years 0–99 as 1900–1999, which broke half-typed years like 0002. */
+function utcDate(year: number, monthIndex: number, day: number): Date {
+  const d = new Date(0);
+  d.setUTCFullYear(year, monthIndex, day);
+  return d;
+}
+
 export function parseAd(ad: string): YMD | null {
   const m = ISO.exec(ad);
   if (!m) return null;
   const ymd = { year: Number(m[1]), month: Number(m[2]), day: Number(m[3]) };
-  const d = new Date(Date.UTC(ymd.year, ymd.month - 1, ymd.day));
+  const d = utcDate(ymd.year, ymd.month - 1, ymd.day);
   if (d.getUTCFullYear() !== ymd.year || d.getUTCMonth() !== ymd.month - 1 || d.getUTCDate() !== ymd.day) return null;
   return ymd;
 }
@@ -39,12 +46,18 @@ export function isAdDate(ad: string): boolean {
   return parseAd(ad) !== null;
 }
 
+/** A real date someone means, not a year still being typed (0002, 0020, 0202). */
+export function isPlausibleDate(ad: string): boolean {
+  const p = parseAd(ad);
+  return !!p && p.year >= 1900 && p.year <= 2200;
+}
+
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
 export function toAd({ year, month, day }: YMD): string {
-  return `${year}-${pad(month)}-${pad(day)}`;
+  return `${String(year).padStart(4, "0")}-${pad(month)}-${pad(day)}`;
 }
 
 function nepalParts(ms: number): Record<string, string> {
@@ -80,7 +93,7 @@ export function nepalTime(now: number = Date.now()): string {
 export function addDays(ad: string, days: number): string {
   const p = parseAd(ad);
   if (!p) throw new Error(`Not a date: ${ad}`);
-  const d = new Date(Date.UTC(p.year, p.month - 1, p.day + days));
+  const d = utcDate(p.year, p.month - 1, p.day + days);
   return toAd({ year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate() });
 }
 
@@ -91,7 +104,7 @@ export function addMonths(ad: string, months: number): string {
   const total = p.year * 12 + (p.month - 1) + months;
   const year = Math.floor(total / 12);
   const month = (total % 12) + 1;
-  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const lastDay = utcDate(year, month, 0).getUTCDate();
   return toAd({ year, month, day: Math.min(p.day, lastDay) });
 }
 
@@ -101,7 +114,7 @@ export function daysBetween(a: string, b: string): number {
   const pb = parseAd(b);
   if (!pa || !pb) throw new Error("Not a date");
   return Math.round(
-    (Date.UTC(pb.year, pb.month - 1, pb.day) - Date.UTC(pa.year, pa.month - 1, pa.day)) / 86_400_000,
+    (utcDate(pb.year, pb.month - 1, pb.day).getTime() - utcDate(pa.year, pa.month - 1, pa.day).getTime()) / 86_400_000,
   );
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { addDays, addMonths } from "@bmserv/shared/dates";
+import { addDays, addMonths, isPlausibleDate } from "@bmserv/shared/dates";
 import type { PmsUnit } from "@bmserv/shared/enums";
 import { t } from "@bmserv/shared/terms";
 import { ApiError, errorMessage, fieldErrors, get, patch, post } from "../../lib/api";
@@ -42,7 +42,7 @@ type Warranty = { on: boolean; startsOn: string | null; length: WarrantyLength; 
 
 /** The warranty's last day: start + length − 1 day (a 1-year warranty from 1 Oct ends 30 Sep). */
 function warrantyEnd(w: Warranty, start: string | null): string | null {
-  if (!start) return null;
+  if (!start || !isPlausibleDate(start)) return null;
   if (w.length === "other") return w.endsOn;
   return addDays(addMonths(start, Number(w.length)), -1);
 }

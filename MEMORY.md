@@ -149,6 +149,7 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 - Long bash heredocs with JS template strings sometimes fail to parse in this shell; write the script to a file instead.
 - The offline cache (`lib/offlineCache.ts`) restores old API shapes before the fresh fetch; new fields can be undefined on first render after an update (now the key changes per build).
 - Git Bash rewrites arguments like `/team` into Windows paths; use `MSYS_NO_PATHCONV=1`.
+- `Date.UTC` reads years 0–99 as 1900–1999. A native date box holds "0002-08-01" while the year is typed; the old `parseAd` rejected it and `addMonths` threw (Add equipment crashed, 2026-11-16). `shared/dates.ts` now uses `utcDate()` (setUTCFullYear) and pads years; `DateField` (AD) passes a value only when `isPlausibleDate` (1900–2200).
 - Long bash heredocs (JS with quotes or template strings) fail to parse or get refused by the permission checker; write scripts with the Write tool and run them with node.
 
 ## 9. Change log

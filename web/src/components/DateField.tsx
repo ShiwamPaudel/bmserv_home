@@ -1,26 +1,12 @@
 // Date picker in the calendar chosen in Settings: Nepali (BS) selects, or a plain AD date field. Value is AD YYYY-MM-DD.
 import { useEffect, useId, useState } from "react";
-import { adToBs, bsMonthNames, bsToAd, bsYearRange, daysInBsMonth, todayNepal } from "@bmserv/shared/dates";
+import { adToBs, bsMonthNames, bsToAd, bsYearRange, daysInBsMonth, isPlausibleDate, todayNepal } from "@bmserv/shared/dates";
 import { t } from "@bmserv/shared/terms";
 import { dateMode } from "../lib/dates";
 
 type Parts = { year: string; month: string; day: string };
 
-function partsOf(ad: string | null): Parts {
-  const bs = ad ? adToBs(ad) : null;
-  return bs ? { year: String(bs.year), month: String(bs.month), day: String(bs.day) } : { year: "", month: "", day: "" };
-}
-
-export function DateField({
-  label,
-  value,
-  onChange,
-  error,
-  help,
-  optional,
-  minYearsBack = 40,
-  yearsAhead = 15,
-}: {
+type Props = {
   label: string;
   value: string | null;
   onChange: (ad: string | null) => void;
@@ -29,7 +15,71 @@ export function DateField({
   optional?: boolean;
   minYearsBack?: number;
   yearsAhead?: number;
-}) {
+};
+
+function partsOf(ad: string | null): Parts {
+  const bs = ad ? adToBs(ad) : null;
+  return bs ? { year: String(bs.year), month: String(bs.month), day: String(bs.day) } : { year: "", month: "", day: "" };
+}
+
+export function DateField(props: Props) {
+  return dateMode() === "ad" ? <AdDateField {...props} /> : <BsDateField {...props} />;
+}
+
+function Message({ id, error, help }: { id: string; error?: string | undefined; help?: string | undefined }) {
+  if (error)
+    return (
+      <div className="error" id={`${id}-msg`}>
+        {error}
+      </div>
+    );
+  if (help)
+    return (
+      <div className="help" id={`${id}-msg`}>
+        {help}
+      </div>
+    );
+  return null;
+}
+
+/**
+ * English calendar: the browser's date box. While a year is being typed (0002, 0020, 0202…) the box keeps
+ * what was typed and the form gets nothing until the date is real, so nothing works with a half-typed year.
+ */
+function AdDateField({ label, value, onChange, error, help, optional }: Props) {
+  const id = useId();
+  const [raw, setRaw] = useState(value ?? "");
+  useEffect(() => {
+    // Follow outside changes (e.g. a form filled from saved data), but keep a half-typed year on screen.
+    if (value !== null || isPlausibleDate(raw)) setRaw(value ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the value changes from outside
+  }, [value]);
+
+  return (
+    <div className={`field${error ? " has-error" : ""}`}>
+      <label htmlFor={id}>
+        {label} {optional && <span className="opt">({t.app.optional})</span>}
+      </label>
+      <input
+        id={id}
+        type="date"
+        className="input"
+        min="1900-01-01"
+        max="2200-12-31"
+        value={raw}
+        onChange={(e) => {
+          setRaw(e.target.value);
+          onChange(isPlausibleDate(e.target.value) ? e.target.value : null);
+        }}
+        aria-describedby={`${id}-msg`}
+      />
+      <Message id={id} error={error} help={help} />
+    </div>
+  );
+}
+
+/** Nepali calendar: day, month and BS year selects. */
+function BsDateField({ label, value, onChange, error, help, optional, minYearsBack = 40, yearsAhead = 15 }: Props) {
   const id = useId();
   const [p, setP] = useState<Parts>(() => partsOf(value));
   useEffect(() => {
@@ -38,18 +88,6 @@ export function DateField({
     if (value !== current && (value || (p.year && p.month && p.day))) setP(partsOf(value));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the value changes from outside
   }, [value]);
-
-  if (dateMode() === "ad") {
-    return (
-      <div className={`field${error ? " has-error" : ""}`}>
-        <label htmlFor={id}>
-          {label} {optional && <span className="opt">({t.app.optional})</span>}
-        </label>
-        <input id={id} type="date" className="input" value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} aria-describedby={`${id}-msg`} />
-        {error ? <div className="error" id={`${id}-msg`}>{error}</div> : help ? <div className="help" id={`${id}-msg`}>{help}</div> : null}
-      </div>
-    );
-  }
 
   const thisYear = adToBs(todayNepal())?.year ?? 2083;
   const first = Math.max(bsYearRange.first, thisYear - minYearsBack);
@@ -103,15 +141,7 @@ export function DateField({
           )}
         </div>
       </fieldset>
-      {error ? (
-        <div className="error" id={`${id}-msg`}>
-          {error}
-        </div>
-      ) : help ? (
-        <div className="help" id={`${id}-msg`}>
-          {help}
-        </div>
-      ) : null}
+      <Message id={id} error={error} help={help} />
     </div>
   );
 }

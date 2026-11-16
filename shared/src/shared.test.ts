@@ -4,6 +4,8 @@ import { assignableRoles, can, canManagePerson, permissions, type Action } from 
 import {
   addDays,
   addMonths,
+  isPlausibleDate,
+  parseAd,
   adToBs,
   bsToAd,
   daysBetween,
@@ -108,6 +110,17 @@ describe("PMS frequency in days, months or years", () => {
 });
 
 describe("dates", () => {
+  it("a half-typed year (0002) is a date to the helpers but not a plausible one; nothing throws", () => {
+    expect(parseAd("0002-08-01")).toEqual({ year: 2, month: 8, day: 1 });
+    expect(addMonths("0002-08-01", 12)).toBe("3-08-01".padStart(10, "0"));
+    expect(addDays("0099-12-31", 1)).toBe("100-01-01".padStart(10, "0"));
+    expect(daysBetween("0002-08-01", "0002-08-11")).toBe(10);
+    expect(isPlausibleDate("0002-08-01")).toBe(false);
+    expect(isPlausibleDate("0202-08-01")).toBe(false);
+    expect(isPlausibleDate("2024-08-01")).toBe(true);
+    expect(isPlausibleDate("2024-02-30")).toBe(false);
+  });
+
   it("today is the Nepal date (UTC+5:45)", () => {
     // 2026-11-27 18:20 UTC = 2026-11-28 00:05 in Nepal
     const ms = Date.UTC(2026, 10, 27, 18, 20);
