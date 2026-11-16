@@ -6,7 +6,7 @@ import { t } from "@bmserv/shared/terms";
 import { errorMessage, fieldErrors, get, patch, post } from "../lib/api";
 import { useCan, useMe, useTitle } from "../lib/hooks";
 import { qk } from "../lib/queryKeys";
-import type { Person } from "../lib/types";
+import type { DepartmentListItem, Person } from "../lib/types";
 import {
   Checkbox,
   Confirm,
@@ -31,6 +31,8 @@ export function Team() {
   const allowed = useCan("team.manageEngineers");
   const me = useMe();
   const q = useQuery({ queryKey: qk.team, queryFn: () => get<Person[]>("/team"), enabled: allowed });
+  const depts = useQuery({ queryKey: qk.departments, queryFn: () => get<DepartmentListItem[]>("/departments"), enabled: allowed });
+  const deptName = new Map((depts.data ?? []).map((d) => [d.id, d.name]));
   const [edit, setEdit] = useState<Edit | null>(null);
   const [showInactive, setShowInactive] = useState(false);
   const [deactivating, setDeactivating] = useState<Person | null>(null);
@@ -81,6 +83,7 @@ export function Team() {
             flash={flash}
             onEdit={(p) => setEdit({ mode: "edit", person: p })}
             empty={t.team.staffEmpty}
+            deptName={deptName}
           />
         </>
       )}
@@ -88,6 +91,7 @@ export function Team() {
       {edit?.mode === "add" && (
         <PersonForm
           actorRole={actor.role}
+          departments={depts.data ?? []}
           onClose={() => setEdit(null)}
           onSaved={(id) => {
             setEdit(null);
@@ -99,6 +103,7 @@ export function Team() {
       {edit?.mode === "edit" && (
         <PersonForm
           actorRole={actor.role}
+          departments={depts.data ?? []}
           person={edit.person}
           onClose={() => setEdit(null)}
           onSaved={(id) => {
@@ -134,6 +139,7 @@ export function Team() {
 
 function PersonForm({
   actorRole,
+  departments,
   person,
   onClose,
   onSaved,
@@ -141,6 +147,7 @@ function PersonForm({
   onDeactivate,
 }: {
   actorRole: Role;
+  departments: DepartmentListItem[];
   person?: Person;
   onClose: () => void;
   onSaved: (id: string) => void;
@@ -156,6 +163,7 @@ function PersonForm({
     email: person?.email ?? "",
     role: (person?.role ?? "engineer") as Role,
     password: "",
+    departmentIds: person?.departmentIds ?? [],
   });
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -170,8 +178,9 @@ function PersonForm({
             phone: f.phone,
             email: f.email,
             role: f.role,
+            ...(f.role === "staff" ? { departmentIds: f.departmentIds } : {}),
           })
-        : await post<Person>("/team", f);
+        : await post<Person>("/team", { ...f, departmentIds: f.role === "staff" ? f.departmentIds : [] });
       await qc.invalidateQueries({ queryKey: qk.team });
       onSaved(saved.id);
     } catch (e) {
@@ -228,6 +237,14 @@ function PersonForm({
         options={roles.map((r) => ({ value: r, label: t.roles[r], help: t.roleHelp[r] }))}
         error={errs.role}
       />
+      {f.role === "staff" && (
+        <DepartmentsField
+          departments={departments}
+          value={f.departmentIds}
+          onChange={(v) => setF({ ...f, departmentIds: v })}
+          error={errs.departmentIds}
+        />
+      )}
       {!person && (
         <TextField
           label={t.team.tempPassword}
@@ -263,6 +280,47 @@ function PersonForm({
         </div>
       )}
     </SheetForm>
+  );
+}
+
+/** Hospital staff: which departments' equipment they see. Several may be ticked. */
+function DepartmentsField({
+  departments,
+  value,
+  onChange,
+  error,
+}: {
+  departments: DepartmentListItem[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  error?: string | undefined;
+}) {
+  const shown = departments.filter((d) => d.isActive || value.includes(d.id));
+  return (
+    <div className={`field${error ? " has-error" : ""}`}>
+      <fieldset>
+      <legend>{t.team.departments}</legend>
+      <div className="help" style={{ marginBottom: 4 }}>
+        {t.team.departmentsHelp}
+      </div>
+      {shown.length === 0 ? (
+        <p className="muted">{t.team.noDepartments}</p>
+      ) : (
+        <div className="check-grid">
+          {shown.map((d) => (
+            <Checkbox
+              key={d.id}
+              checked={value.includes(d.id)}
+              onChange={(on) => onChange(on ? [...value, d.id] : value.filter((x) => x !== d.id))}
+            >
+              {d.name}
+            </Checkbox>
+          ))}
+        </div>
+      )}
+      </fieldset>
+      {error && <div className="error">{error}</div>}
+    </div>
   );
 }
 
@@ -306,12 +364,15 @@ function PeopleRows({
   flash,
   onEdit,
   empty,
+  deptName,
 }: {
   people: Person[];
   actor: { id: string; role: Role };
   flash: string | null;
   onEdit: (p: Person) => void;
   empty: string;
+  /** Given for hospital staff: shows their departments. */
+  deptName?: Map<string, string>;
 }) {
   return (
     <Rows isEmpty={people.length === 0} empty={empty}>
@@ -336,6 +397,10 @@ function PeopleRows({
                 {p.phone}
                 <span className="sep">{p.email}</span>
               </>,
+              deptName &&
+                (p.departmentIds.length
+                  ? `${t.team.departments}: ${p.departmentIds.map((id) => deptName.get(id) ?? "").filter(Boolean).join(", ")}`
+                  : t.team.departmentsNone),
             ]}
             side={!p.isActive ? <Pill tone="off">{t.status.deactivated}</Pill> : undefined}
           />

@@ -38,7 +38,7 @@ export const requireSession = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 /** Hospital staff only report problems (and see model photos): everything else under /api is closed to them. */
-const staffPaths = /^\/api\/(me|me\/password|report|report\/[A-Za-z0-9]+|my-reports|push|push\/[a-z/]+|files\/[A-Za-z0-9_-]+\/image)$/;
+const staffPaths = /^\/api\/(me|me\/password|report|report\/[A-Za-z0-9]+|my-reports|my-equipment|push|push\/[a-z/]+|files\/[A-Za-z0-9_-]+\/image)$/;
 export const staffGate = createMiddleware<AppEnv>(async (c, next) => {
   if (c.get("actor").role === "staff" && !staffPaths.test(c.req.path)) throw forbidden();
   await next();

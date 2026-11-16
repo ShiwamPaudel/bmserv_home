@@ -105,6 +105,7 @@ export function Row({
   selected,
   before,
   thumb,
+  className,
 }: {
   to?: string;
   onClick?: () => void;
@@ -116,6 +117,7 @@ export function Row({
   before?: ReactNode;
   /** A small picture at the start of the row (model photo). */
   thumb?: ReactNode;
+  className?: string;
 }) {
   const inner = (
     <>
@@ -133,7 +135,7 @@ export function Row({
   );
   return (
     <li
-      className={`row${flash ? " flash" : ""}${selected ? " selected" : ""}`}
+      className={`row${flash ? " flash" : ""}${selected ? " selected" : ""}${className ? ` ${className}` : ""}`}
       style={before ? { display: "flex" } : undefined}
     >
       {before}

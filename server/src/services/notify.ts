@@ -6,7 +6,7 @@ import { breakdownNumber } from "@bmserv/shared/keys";
 import { t } from "@bmserv/shared/terms";
 import { env } from "../env";
 import { getDb } from "../db/client";
-import { breakdowns, equipment, user } from "../db/schema";
+import { breakdownNotes, breakdowns, equipment, user } from "../db/schema";
 import { sendEmail } from "../emails/send";
 import { breakdownReported } from "../emails/templates";
 import { equipmentRows, withAway } from "./equipmentRows";
@@ -90,15 +90,26 @@ export async function notifyClosed(breakdownId: string, closedById: string): Pro
     const s = await getSettings();
     if (!s.pushOnFixed) return;
     const d = await load(breakdownId);
-    if (!d || d.b.recordedBy === closedById) return;
-    const reporter = (await getDb().select({ role: user.role }).from(user).where(eq(user.id, d.b.recordedBy)))[0];
+    if (!d) return;
+    // The person who recorded it, and hospital staff whose report was added to it as a note.
+    const db = getDb();
+    const recorder = await db.select({ id: user.id, role: user.role }).from(user).where(eq(user.id, d.b.recordedBy));
+    const staffNoted = await db
+      .selectDistinct({ id: user.id, role: user.role })
+      .from(breakdownNotes)
+      .innerJoin(user, eq(user.id, breakdownNotes.createdBy))
+      .where(and(eq(breakdownNotes.breakdownId, breakdownId), eq(user.role, "staff")));
+    const people = new Map([...recorder, ...staffNoted].filter((p) => p.id !== closedById).map((p) => [p.id, p.role]));
     const fixed = d.b.status === "fixed";
-    await sendPush([d.b.recordedBy], {
+    const message = {
       title: fixed ? t.notifications.fixedTitle(d.bd) : t.notifications.notRepairableTitle(d.bd),
       body: fixed ? t.notifications.fixedBody(d.label, d.e.currentDepartmentName) : t.notifications.notRepairableBody(d.label),
-      url: reporter?.role === "staff" ? "/my-reports" : `/breakdowns/${breakdownId}`,
       tag: `breakdown-${breakdownId}`,
-    });
+    };
+    const staffIds = [...people].filter(([, role]) => role === "staff").map(([id]) => id);
+    const teamIds = [...people].filter(([, role]) => role !== "staff").map(([id]) => id);
+    if (staffIds.length) await sendPush(staffIds, { ...message, url: "/my-reports" });
+    if (teamIds.length) await sendPush(teamIds, { ...message, url: `/breakdowns/${breakdownId}` });
   } catch (err) {
     console.error("Breakdown notification failed:", err instanceof Error ? err.message : err);
   }

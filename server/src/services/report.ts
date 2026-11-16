@@ -1,12 +1,12 @@
 // Reporting a problem from a label: what hospital staff (and the team) see after scanning a QR code.
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, or } from "drizzle-orm";
 import { teamRoles, type BreakdownStatus } from "@bmserv/shared/enums";
 import { breakdownNumber } from "@bmserv/shared/keys";
 import type { ReportInput } from "@bmserv/shared/schemas/report";
 import { t } from "@bmserv/shared/terms";
 import { env } from "../env";
 import { getDb } from "../db/client";
-import { breakdownNotes, breakdowns, equipment, user } from "../db/schema";
+import { breakdownNotes, breakdowns, departments, equipment, equipmentModels, staffDepartments, user } from "../db/schema";
 import { AppError, badRequest, notFound } from "../lib/errors";
 import { newId } from "../lib/ids";
 import type { Actor } from "../lib/http";
@@ -138,7 +138,52 @@ export async function reportProblem(actor: Actor, input: ReportInput) {
   };
 }
 
-/** What someone reported, newest first, with what happened to it. */
+/** Hospital staff: the equipment that is in their departments now, with any unresolved breakdown. */
+export async function myEquipment(actor: Actor) {
+  const db = getDb();
+  const depts = await db
+    .select({ id: departments.id, name: departments.name })
+    .from(staffDepartments)
+    .innerJoin(departments, eq(departments.id, staffDepartments.departmentId))
+    .where(and(eq(staffDepartments.userId, actor.id), eq(departments.isActive, true)))
+    .orderBy(asc(departments.name));
+  if (!depts.length) return { departments: [], equipment: [] };
+  const rows = await equipmentRows(db)
+    .where(
+      inArray(
+        equipment.currentDepartmentId,
+        depts.map((d) => d.id),
+      ),
+    )
+    .orderBy(asc(equipmentModels.typeName), asc(equipment.serialNumber));
+  const open = rows.length
+    ? await db
+        .select({ equipmentId: breakdowns.equipmentId, number: breakdowns.number })
+        .from(breakdowns)
+        .where(and(inArray(breakdowns.status, unresolved), inArray(breakdowns.equipmentId, rows.map((r) => r.id))))
+    : [];
+  const openBy = new Map(open.map((o) => [o.equipmentId, breakdownNumber(o.number)]));
+  return {
+    departments: depts,
+    equipment: rows.map((e) => ({
+      id: e.id,
+      qrCode: e.qrCode,
+      typeName: e.typeName,
+      manufacturer: e.manufacturer,
+      model: e.model,
+      serialNumber: e.serialNumber,
+      hospitalTag: e.hospitalTag,
+      departmentId: e.currentDepartmentId,
+      departmentName: e.currentDepartmentName,
+      status: e.status,
+      photoFileId: e.modelPhotoFileId,
+      openBreakdown: openBy.get(e.id) ?? null,
+    })),
+  };
+}
+
+/** What someone reported, newest first, with what happened to it. A report on equipment that was already
+ * reported is added to that breakdown as a note, so breakdowns they added to count too. */
 export async function myReports(actor: Actor) {
   const db = getDb();
   const rows = await db
@@ -154,7 +199,15 @@ export async function myReports(actor: Actor) {
     })
     .from(breakdowns)
     .innerJoin(user, eq(user.id, breakdowns.assignedTo))
-    .where(eq(breakdowns.recordedBy, actor.id))
+    .where(
+      or(
+        eq(breakdowns.recordedBy, actor.id),
+        inArray(
+          breakdowns.id,
+          db.select({ id: breakdownNotes.breakdownId }).from(breakdownNotes).where(eq(breakdownNotes.createdBy, actor.id)),
+        ),
+      ),
+    )
     .orderBy(desc(breakdowns.reportedAt))
     .limit(50);
   const ids = [...new Set(rows.map((r) => r.equipmentId))];

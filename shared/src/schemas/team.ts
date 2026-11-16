@@ -17,6 +17,8 @@ export const createPersonSchema = z.object({
   email: email(),
   role: z.enum(roles),
   password: password(),
+  /** Hospital staff only: the departments whose equipment they see. */
+  departmentIds: z.array(z.string().min(1).max(40)).max(100).default([]),
 });
 
 export const updatePersonSchema = z.object({
@@ -25,6 +27,7 @@ export const updatePersonSchema = z.object({
   email: email().optional(),
   role: z.enum(roles).optional(),
   isActive: z.boolean().optional(),
+  departmentIds: z.array(z.string().min(1).max(40)).max(100).optional(),
 });
 
 export const resetPasswordSchema = z.object({ password: password() });

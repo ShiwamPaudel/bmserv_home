@@ -20,7 +20,7 @@ One install serves one hospital. This build is configured for **ABC Hospital**. 
 
 ## 3. People and what they can do
 
-**Admin** runs the install. **Lead** is the Biomedical Department Head. **Engineer** is a hospital biomedical engineer. Together they are the **Biomedical team**. **Hospital staff** (nurses, ward staff) only report problems by scanning a label (F16) and follow their own reports; they see nothing else.
+**Admin** runs the install. **Lead** is the Biomedical Department Head. **Engineer** is a hospital biomedical engineer. Together they are the **Biomedical team**. **Hospital staff** (nurses, ward staff) report problems by scanning a label or from the equipment list of their departments (F16) and follow their own reports; they see nothing else.
 
 | Action | Admin | Lead | Engineer |
 |---|---|---|---|
@@ -210,12 +210,13 @@ Each line opens what it describes. Nothing to show: say so plainly.
 - **Notifications (Web Push)**: each person turns them on per device under My account (iPhone: after adding BMServ to the Home Screen) and can send a test. The Biomedical team is notified of every new breakdown (except the one who recorded it); the person who recorded or reported a breakdown is notified when it is fixed or cannot be repaired. Settings can turn each off.
 
 ### F16. Hospital staff report a problem
-- Admin or Lead adds hospital staff under Team with the role **Hospital staff** (name, username, phone, email, temporary password).
+- Admin or Lead adds hospital staff under Team with the role **Hospital staff** (name, username, phone, email, temporary password) and ticks their **departments** (none, one or several; changeable later).
+- **Equipment** (hospital staff): the equipment that is in their departments now (type, model, S.N., department, status, "Already reported" when a breakdown is unresolved), with search and a department filter. Tapping one opens Report a problem for it, the same as scanning its label. Staff without a department are told to ask the Biomedical team and can still scan.
 - The QR label opens BMServ; hospital staff signed in see **Report a problem** for that equipment: what it is, where it is, and one box "What is wrong?". The team opening the same label sees the equipment page.
 - Sending creates a breakdown (Open), reported by and recorded by that person, responsible: the person set in Settings, else the first active Lead, else Admin. If the equipment already has an unresolved breakdown, the report is added to it as a note instead.
 - The Biomedical team is notified (push, and an email to every active Admin, Lead and Engineer, settings allowing). After sending, WhatsApp buttons for team members open WhatsApp with a short message and a link to the breakdown.
-- **My reports** lists what the person reported, its status and when it was fixed. Out-of-service equipment cannot be reported.
-- Done when: a nurse scans a label, reports, the team gets a notification and email, and the nurse sees it fixed under My reports.
+- **My reports** lists what the person reported, including reports added to an existing breakdown, its status and when it was fixed. Everyone whose report was added to a breakdown is notified when it is fixed. Out-of-service equipment cannot be reported.
+- Done when: a nurse scans a label (or picks the equipment from their department's list), reports, the team gets a notification and email, and the nurse sees it fixed under My reports.
 
 ## 6. Emails
 

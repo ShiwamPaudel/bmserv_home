@@ -1,11 +1,11 @@
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import type { Role } from "@bmserv/shared/enums";
 import { assignableRoles, canManagePerson } from "@bmserv/shared/permissions";
 import type { CreatePerson, UpdatePerson } from "@bmserv/shared/schemas/team";
 import { t } from "@bmserv/shared/terms";
 import { getAuth } from "../auth";
 import { getDb } from "../db/client";
-import { user } from "../db/schema";
+import { departments, staffDepartments, user } from "../db/schema";
 import { AppError, badRequest, conflict, forbidden, notFound } from "../lib/errors";
 import type { Actor } from "../lib/http";
 import { logActivity } from "./activity";
@@ -18,6 +18,8 @@ export type Person = {
   phone: string;
   role: Role;
   isActive: boolean;
+  /** Hospital staff only: the departments whose equipment they see. */
+  departmentIds: string[];
 };
 
 const personColumns = {
@@ -40,7 +42,7 @@ function toPerson(r: {
   phone: string;
   role: Role;
   banned: boolean;
-}): Person {
+}, departmentIds: string[] = []): Person {
   return {
     id: r.id,
     name: r.name,
@@ -49,18 +51,57 @@ function toPerson(r: {
     phone: r.phone,
     role: r.role,
     isActive: !r.banned,
+    departmentIds,
   };
+}
+
+async function departmentsByPerson(userIds?: string[]): Promise<Map<string, string[]>> {
+  const rows = await getDb()
+    .select({ userId: staffDepartments.userId, departmentId: staffDepartments.departmentId })
+    .from(staffDepartments)
+    .innerJoin(departments, eq(departments.id, staffDepartments.departmentId))
+    .where(userIds ? inArray(staffDepartments.userId, userIds) : undefined)
+    .orderBy(asc(departments.name));
+  const map = new Map<string, string[]>();
+  for (const r of rows) map.set(r.userId, [...(map.get(r.userId) ?? []), r.departmentId]);
+  return map;
+}
+
+/** The departments a person of this role may have: only hospital staff have any, all active. */
+async function checkDepartments(role: Role, ids: string[]): Promise<string[]> {
+  const db = getDb();
+  const wanted = role === "staff" ? [...new Set(ids)] : [];
+  if (wanted.length) {
+    const found = await db
+      .select({ id: departments.id })
+      .from(departments)
+      .where(and(inArray(departments.id, wanted), eq(departments.isActive, true)));
+    if (found.length !== wanted.length) throw badRequest(t.team.departmentsUnknown, { departmentIds: t.team.departmentsUnknown });
+  }
+  return wanted;
+}
+
+/** Replaces a person's departments with checked ids. */
+async function setDepartments(personId: string, wanted: string[]): Promise<void> {
+  await getDb().transaction(async (tx) => {
+    await tx.delete(staffDepartments).where(eq(staffDepartments.userId, personId));
+    if (wanted.length) {
+      const now = Date.now();
+      await tx.insert(staffDepartments).values(wanted.map((departmentId) => ({ userId: personId, departmentId, createdAt: now })));
+    }
+  });
 }
 
 export async function listTeam(): Promise<Person[]> {
   const rows = await getDb().select(personColumns).from(user).orderBy(asc(user.banned), asc(user.name));
-  return rows.map(toPerson);
+  const depts = await departmentsByPerson();
+  return rows.map((r) => toPerson(r, depts.get(r.id)));
 }
 
 async function findPerson(id: string): Promise<Person> {
   const rows = await getDb().select(personColumns).from(user).where(eq(user.id, id));
   if (!rows[0]) throw notFound();
-  return toPerson(rows[0]);
+  return toPerson(rows[0], (await departmentsByPerson([id])).get(id));
 }
 
 async function assertUnique(fields: { username?: string; email?: string }, exceptId?: string) {
@@ -83,7 +124,7 @@ async function assertUnique(fields: { username?: string; email?: string }, excep
 
 /** Creates a person with a temporary password (no public sign-up). Used by the Team screen and the seed. */
 export async function createPersonUnchecked(
-  input: CreatePerson,
+  input: Omit<CreatePerson, "departmentIds">,
   opts: { mustChangePassword: boolean },
 ): Promise<Person> {
   await assertUnique({ username: input.username, email: input.email });
@@ -111,7 +152,10 @@ export async function createPersonUnchecked(
 
 export async function createPerson(actor: Actor, input: CreatePerson): Promise<Person> {
   if (!canManagePerson(actor.role, input.role)) throw forbidden();
-  const person = await createPersonUnchecked(input, { mustChangePassword: true });
+  const depts = await checkDepartments(input.role, input.departmentIds ?? []);
+  const created = await createPersonUnchecked(input, { mustChangePassword: true });
+  if (depts.length) await setDepartments(created.id, depts);
+  const person = await findPerson(created.id);
   await logActivity(getDb(), {
     userId: actor.id,
     action: "team.added",
@@ -130,10 +174,16 @@ export async function updatePerson(actor: Actor, id: string, input: UpdatePerson
     if (input.isActive === false) throw badRequest(t.team.cannotSelf);
     if (input.role !== undefined && input.role !== target.role) throw forbidden();
   }
+  if (self && input.departmentIds !== undefined) throw forbidden();
   if (!self && input.role && input.role !== target.role && !assignableRoles(actor.role).includes(input.role)) {
     throw forbidden();
   }
   await assertUnique({ email: input.email }, id);
+  const role = input.role ?? target.role;
+  const depts =
+    input.departmentIds !== undefined || role !== target.role
+      ? await checkDepartments(role, input.departmentIds ?? target.departmentIds)
+      : null;
 
   const db = getDb();
   const patch: Partial<typeof user.$inferInsert> = { updatedAt: new Date() };
@@ -146,6 +196,7 @@ export async function updatePerson(actor: Actor, id: string, input: UpdatePerson
     patch.banReason = input.isActive ? null : "Deactivated";
   }
   await db.update(user).set(patch).where(eq(user.id, id));
+  if (depts) await setDepartments(id, depts);
 
   if (input.isActive === false) {
     const ctx = await getAuth().$context;

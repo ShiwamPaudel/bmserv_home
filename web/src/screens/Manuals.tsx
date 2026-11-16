@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { t } from "@bmserv/shared/terms";
 import { get } from "../lib/api";
-import { useDebounced, useOnline, useTitle } from "../lib/hooks";
+import { useDebounced, useTitle } from "../lib/hooks";
 import { qk } from "../lib/queryKeys";
 import type { ManualRow } from "../lib/types";
-import { MomentText } from "../lib/dates";
-import { formatBytes, openFile } from "../lib/upload";
+import { formatBytes } from "../lib/upload";
+import { FileActions, FileIcon, fileTypeLabel } from "../components/files";
 import { LoadError, Loading, Notice, PageHead, Row, Rows } from "../components/ui";
 
 export function Manuals() {
@@ -15,7 +15,6 @@ export function Manuals() {
   const [params] = useSearchParams();
   const [q, setQ] = useState(params.get("q") ?? "");
   const dq = useDebounced(q.trim());
-  const online = useOnline();
   const [error, setError] = useState<string | null>(null);
   const list = useQuery({ queryKey: qk.manuals(dq), queryFn: () => get<ManualRow[]>(`/manuals?q=${encodeURIComponent(dq)}`), placeholderData: (p) => p });
   return (
@@ -37,20 +36,25 @@ export function Manuals() {
           {list.data?.map((m) => (
             <Row
               key={m.id}
-              onClick={() => (online ? openFile(m.id).catch((e: Error) => setError(e.message)) : setError(t.app.noConnection))}
-              title={t.manuals.rowTitle(t.fileKind[m.kind], `${m.manufacturer} ${m.model}`)}
+              className="file-row"
+              thumb={<FileIcon mimeType={m.mimeType} />}
+              title={m.title}
               lines={[
                 <>
-                  {m.title}
-                  {m.note && <span className="sep">{m.note}</span>}
-                </>,
-                <>
-                  {formatBytes(m.sizeBytes)}
+                  {t.fileKind[m.kind]}
                   <span className="sep">
-                    {t.files.addedOn} <MomentText ms={m.createdAt} />
+                    <Link to={`/models/${m.modelId}`}>
+                      {m.typeName}, {m.manufacturer} {m.model}
+                    </Link>
                   </span>
                 </>,
+                <>
+                  {fileTypeLabel(m.mimeType)}, {formatBytes(m.sizeBytes)}
+                  {m.note && <span className="sep">{m.note}</span>}
+                  <span className="sep">{t.manuals.usedBy(m.equipmentCount)}</span>
+                </>,
               ]}
+              side={<FileActions id={m.id} title={m.title} onError={setError} />}
             />
           ))}
         </Rows>

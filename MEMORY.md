@@ -10,15 +10,15 @@ Installable web app for a hospital Biomedical Department: equipment register by 
 
 ## 2. Current state
 
-- Phases 1–5 are **built and pass `npm run check`** (types, lint, 95 tests). Go-live steps of Phase 4 are not done.
-- Phase 5 (owner feedback): Models screen + PMS frequency on the model (days/months/years), Hospital staff role and Report a problem from the QR, Web Push notifications, WhatsApp buttons, phone country codes, required provider contacts, Home overview charts, Settings tabs, My account redesign, full-width desktop, count bug fix.
-- Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo applies on next server start) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
+- Phases 1–5 are **built and pass `npm run check`** (types, lint, 99 tests). Go-live steps of Phase 4 are not done.
+- Phase 5 (owner feedback): hospital staff departments and their Equipment list, Models screen + PMS frequency on the model (days/months/years), Hospital staff role and Report a problem from the QR, Web Push notifications, WhatsApp buttons, phone country codes, required provider contacts, Home overview charts, Settings tabs, My account redesign, full-width desktop, count bug fix.
+- Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo, 0004_staff_departments) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
 - Checked: the Vercel bundle (`.vercel/output`) run locally against live Turso; signed in as the live Admin; every screen opens without errors.
-- **Not yet**: Vercel deploy (owner adds GitHub + Vercel later; add the VAPID values too), R2 CORS policy (owner sets it in the dashboard), Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
+- **Not yet**: Vercel deploy (owner is setting up the Vercel project, preset Other; add the VAPID values too), Vercel address in R2 CORS, Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
 - VAPID keys were generated into `.env.local` (2026-11-13). `.env.example` is now gitignored at the owner's request (local template only).
-- **R2 CORS is still not set** (preflight from localhost refused, 2026-11-16): browser uploads (manuals, documents, model photos) fail until the owner sets it (ARCHITECTURE section 12).
+- R2 CORS works for localhost (a manual was uploaded from the browser on 2026-11-16); add the Vercel address to it after deploy.
 - Live address: none yet. Local: `npm run dev` → http://localhost:5173.
-- Next step: owner sets R2 CORS + creates the Vercel project → deploy (ARCHITECTURE section 12) → try as Admin, Lead, Engineer → tick the "Deployed" boxes in PHASES.md → commit.
+- Next step: owner creates the Vercel project (push to GitHub first) → deploy (ARCHITECTURE section 12) → try as Admin, Lead, Engineer → tick the "Deployed" boxes in PHASES.md → commit.
 
 ## 3. Where to look
 
@@ -50,7 +50,7 @@ server/src/scripts/  check-services.ts r2-cors.ts migrate.ts vercel-output.ts (B
 server/src/test/     setup.ts (in-memory libSQL, fake email + push transports, signed-in roles incl. staff) auth.test.ts rules.test.ts staff.test.ts
 web/src/app/         App.tsx (routes; TeamOnly group) Layout.tsx (top bar, bottom bar, sidebar, guard, StaffLayout, TeamOnly/TeamOr, PWA prompts)
 web/src/screens/     SignIn Home (overview + attention) Account Team Settings (tabs) More Models (list + ModelPage) Departments Providers Manuals Pms Scan Report (staff) PrintLabels equipment/ breakdowns/
-web/src/components/  ui.tsx (Pill Row(thumb) Fact fields PhoneField Switch WhatsAppButton Sheet Confirm Toast) charts.tsx ModelPhoto (thumb, picker) ModelFields PmsFrequencyField DateField EquipmentLine files (upload) pmsSheets EmailRows
+web/src/components/  files.tsx (FileRows, FileActions, FileIcon, UploadSheet) ui.tsx (Pill Row(thumb, className) Fact fields PhoneField Switch WhatsAppButton Sheet Confirm Toast) charts.tsx ModelPhoto (thumb, picker) ModelFields PmsFrequencyField DateField EquipmentLine pmsSheets EmailRows
 web/src/lib/         api.ts types.ts queryKeys.ts hooks.ts dates.tsx upload.ts offlineCache.ts auth.ts push.ts (browser push) image.ts (shrink photos)
 web/src/print/       labelSheet.ts (+test) label.css
 web/src/styles/      tokens.css base.css screens.css
@@ -97,6 +97,9 @@ web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.i
 | D34 | Model photo: files row (owner model, kind photo) + `equipment_models.photo_file_id`; replaced photo marked removed+purged and deleted from R2 at once; shrunk to 1280 px JPEG in the browser; `<img>` via `/api/files/:id/image` redirect | Owner, 2026-11-16; fast thumbnails |
 | D35 | Offline cache key includes the build (`__APP_BUILD__`); older caches are dropped on start | Old Home data without `stats` crashed Home |
 | D36 | README only describes BMServ; setup and deploy live in ARCHITECTURE section 12; `.env.example` is gitignored | Owner, 2026-11-16 |
+| D38 | Hospital staff departments: table `staff_departments`; staff see equipment whose **current** department is one of theirs (where it is now); a row opens `/e/:qrCode` (Report a problem). Only staff keep departments; a person cannot change their own | Owner, 2026-11-16 |
+| D39 | My reports = breakdowns I recorded **or** added a report note to (a staff report on an already-open breakdown becomes a note); the fixed push goes to the recorder and every staff member who added a note | Owner: My reports looked empty |
+| D40 | Print labels is a route inside the Layout (`/print/labels`, TeamOnly); print CSS strips the app frame with `body:has(.label-screen)` | Owner: the all-white page felt disconnected |
 | D37 | Manuals are managed only on the model page (`/models/:id`); the equipment page lists them read-only with "Open model". Manual lists filter manual kinds (a model also owns its photo) | Owner: one manual per model, many units |
 
 ## 6. Open questions for the owner
@@ -130,11 +133,13 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 - Long bash heredocs with JS template strings sometimes fail to parse in this shell; write the script to a file instead.
 - The offline cache (`lib/offlineCache.ts`) restores old API shapes before the fresh fetch; new fields can be undefined on first render after an update (now the key changes per build).
 - Git Bash rewrites arguments like `/team` into Windows paths; use `MSYS_NO_PATHCONV=1`.
+- Long bash heredocs (JS with quotes or template strings) fail to parse or get refused by the permission checker; write scripts with the Write tool and run them with node.
 
 ## 9. Change log
 
 Newest first: date, what changed, docs touched.
 
+- 2026-11-16 — Hospital staff departments + staff Equipment tab (migration 0004), My reports includes reports added to an open breakdown, Print labels redesigned inside the app, file rows with real buttons and type icons, section actions as outlined buttons, button hover states. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Model page (photo, PMS, manuals once per model, its equipment); manuals no longer uploaded from equipment pages; manual lists exclude the model photo. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Model photos (R2, shown beside names), Home crash from old offline data fixed, error screen, README trimmed, `.env.example` gitignored; migration 0003. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-13 — Phase 5: Models screen, PMS frequency on models, hospital staff reports, Web Push, WhatsApp, country codes, Home overview, Settings tabs, Account redesign, full width, count fix; migration 0002. Docs: all.

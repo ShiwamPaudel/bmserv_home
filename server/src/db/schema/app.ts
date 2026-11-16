@@ -421,3 +421,18 @@ export const pushSubscriptions = sqliteTable(
   },
   (t) => [index("push_subscriptions_user_idx").on(t.userId)],
 );
+
+/** Departments a hospital staff account belongs to: they see the equipment that is in these departments now. */
+export const staffDepartments = sqliteTable(
+  "staff_departments",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    departmentId: text("department_id")
+      .notNull()
+      .references(() => departments.id),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.departmentId] }), index("staff_departments_department_idx").on(t.departmentId)],
+);

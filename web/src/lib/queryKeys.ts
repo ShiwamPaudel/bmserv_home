@@ -21,6 +21,7 @@ export const qk = {
   home: ["home"] as const,
   report: (qr: string) => ["report", qr] as const,
   myReports: ["my-reports"] as const,
+  myEquipment: ["my-equipment"] as const,
   push: ["push"] as const,
 };
 

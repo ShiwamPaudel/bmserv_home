@@ -64,6 +64,7 @@ export const t = {
     models: "Models",
     report: "Report a problem",
     myReports: "My reports",
+    staffEquipment: "Equipment",
   },
 
   roles: { admin: "Admin", lead: "Lead", engineer: "Engineer", staff: "Hospital staff" } satisfies Record<Role, string>,
@@ -263,6 +264,16 @@ export const t = {
   },
 
   // Hospital staff: report a problem from a label
+  staffEquipment: {
+    title: "Equipment in my departments",
+    intro: "Equipment that is in your departments now. Tap one to report a problem.",
+    search: "Search type, model or serial number",
+    all: "All departments",
+    empty: "No equipment in your departments.",
+    noMatch: "No equipment matches. Clear the search.",
+    noDepartments: "You are not in any department yet. Ask the Biomedical team to add you; until then, report by scanning the label.",
+    openBreakdown: (bd: string) => `Already reported, ${bd}`,
+  },
   report: {
     title: "Report a problem",
     intro: "Scan the BMServ label on the equipment to tell the Biomedical team what is wrong.",
@@ -319,6 +330,11 @@ export const t = {
     biomedicalTeam: "Biomedical team",
     hospitalStaff: "Hospital staff who report problems",
     staffEmpty: "No hospital staff yet. Add a person with the role Hospital staff so they can report problems by scanning labels.",
+    departments: "Departments",
+    departmentsHelp: "They see the equipment that is in these departments now, and can report a problem from the list as well as by scanning a label.",
+    departmentsNone: "No department yet: they can only report by scanning a label.",
+    departmentsUnknown: "Choose departments from the list.",
+    noDepartments: "No departments yet. Add them under Departments.",
   },
 
   // F2
@@ -626,6 +642,11 @@ export const t = {
     removed: "Removed",
     addedOn: "Added",
     size: "Size",
+    typePdf: "PDF",
+    typeImage: "Image",
+    openTitle: (title: string) => `Open ${title}`,
+    downloadTitle: (title: string) => `Download ${title}`,
+    removeTitle: (title: string) => `Remove ${title}`,
   },
 
   manuals: {
@@ -635,6 +656,7 @@ export const t = {
     empty: "No manuals uploaded yet. Upload them on a model's page under Models.",
     noMatch: "No manual matches.",
     rowTitle: (kind: string, model: string) => `${kind}: ${model}`,
+    usedBy: (n: number) => (n === 1 ? "For 1 equipment" : `For ${n} equipment`),
   },
 
   // F7
@@ -653,6 +675,13 @@ export const t = {
     afterPrint: "Did the labels print correctly?",
     markPrinted: "Yes, labels printed",
     printedSaved: "Labels marked as printed",
+    sheets: (n: number) => plural(n, "A4 sheet", "A4 sheets"),
+    preview: "Preview",
+    sheetOf: (i: number, n: number) => `Sheet ${i} of ${n}`,
+    legendUsed: "Already used",
+    legendNew: "New labels",
+    legendFree: "Left empty",
+    position: (p: number) => `Position ${p}`,
   },
 
   scan: {

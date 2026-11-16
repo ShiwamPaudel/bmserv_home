@@ -81,6 +81,10 @@ Why: owner feedback after first local testing (2026-11-13)
 - [x] Old offline data no longer crashes Home after an update; plain error screen instead of the developer page
 - [x] README only says what BMServ is; `.env.example` not committed (owner)
 - [x] Model page: manuals uploaded once per model and shown on every equipment of that model; equipment page shows them read-only
+- [x] Hospital staff departments (several per person): staff see the equipment in their departments and report from the list (migration 0004, applied to live Turso)
+- [x] My reports also shows reports added to an existing breakdown; those reporters are told when it is fixed
+- [x] Print labels screen inside the app layout (panel + A4 preview); printed sheet unchanged
+- [x] File rows: type icon and real Open / Download / Remove buttons (Manuals, model and equipment pages); section actions as outlined buttons; button hover states
 - [ ] Tried as Admin, Lead, Engineer and Hospital staff on a phone (notifications, WhatsApp, report from a printed label)
 - [ ] VAPID keys added to Vercel; deployed; docs updated
 

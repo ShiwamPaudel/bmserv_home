@@ -22,19 +22,10 @@ import { BreakdownNew } from "../screens/breakdowns/BreakdownNew";
 import { BreakdownPage } from "../screens/breakdowns/BreakdownPage";
 import { AskProvider } from "../screens/breakdowns/AskProvider";
 import { ModelPage, Models } from "../screens/Models";
-import { MyReports, ReportStart } from "../screens/Report";
+import { MyReports, ReportStart, StaffEquipment } from "../screens/Report";
 
 const router = createBrowserRouter([
   { path: "/sign-in", element: <SignIn />, errorElement: <RouteError /> },
-  {
-    path: "/print/labels",
-    errorElement: <RouteError />,
-    element: (
-      <RequireAuth>
-        <TeamOr team={<PrintLabels />} staff={<NotFound />} />
-      </RequireAuth>
-    ),
-  },
   {
     path: "/",
     errorElement: <RouteError />,
@@ -49,6 +40,7 @@ const router = createBrowserRouter([
       { path: "e/:qrCode", element: <QrOpen /> },
       { path: "scan", element: <Scan /> },
       { path: "my-reports", element: <MyReports /> },
+      { path: "my-equipment", element: <TeamOr team={<NotFound />} staff={<StaffEquipment />} /> },
       { path: "account", element: <Account /> },
       {
         element: <TeamOnly />,
@@ -73,6 +65,7 @@ const router = createBrowserRouter([
           { path: "team", element: <Team /> },
           { path: "settings", element: <SettingsScreen /> },
           { path: "more", element: <More /> },
+          { path: "print/labels", element: <PrintLabels /> },
         ],
       },
       { path: "*", element: <NotFound /> },

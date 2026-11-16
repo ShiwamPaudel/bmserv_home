@@ -8,11 +8,12 @@ import { t } from "@bmserv/shared/terms";
 import { errorMessage, fieldErrors, get, post } from "../lib/api";
 import { useMe, useOnline, useTitle } from "../lib/hooks";
 import { qk } from "../lib/queryKeys";
-import type { MyReport, ReportInfo, ReportResult } from "../lib/types";
+import type { MyEquipment, MyReport, ReportInfo, ReportResult } from "../lib/types";
 import { MomentText } from "../lib/dates";
 import { ModelThumb } from "../components/ModelPhoto";
 import {
   BreakdownStatusPill,
+  EquipmentStatusPill,
   iconProps,
   LoadError,
   Loading,
@@ -65,6 +66,94 @@ export function ReportStart() {
       <Section title={t.report.myReports} action={<Link to="/my-reports">{t.app.more}</Link>}>
         {mine.isLoading ? <Loading /> : <ReportRows rows={(mine.data ?? []).slice(0, 3)} />}
       </Section>
+    </>
+  );
+}
+
+/** Hospital staff: equipment in their departments now; tapping one opens Report a problem for it. */
+export function StaffEquipment() {
+  useTitle(t.staffEquipment.title);
+  const q = useQuery({ queryKey: qk.myEquipment, queryFn: () => get<MyEquipment>("/my-equipment") });
+  const [search, setSearch] = useState("");
+  const [dept, setDept] = useState("");
+
+  if (q.isLoading) return <Loading />;
+  if (q.error || !q.data) return <LoadError error={q.error} retry={() => void q.refetch()} />;
+  const { departments, equipment } = q.data;
+  const words = search.trim().toLowerCase().split(/s+/).filter(Boolean);
+  const rows = equipment.filter(
+    (e) =>
+      (!dept || e.departmentId === dept) &&
+      words.every((w) =>
+        [e.typeName, e.manufacturer, e.model, e.serialNumber, e.hospitalTag ?? ""].some((v) => v.toLowerCase().includes(w)),
+      ),
+  );
+
+  return (
+    <>
+      <PageHead title={t.staffEquipment.title} />
+      {!departments.length ? (
+        <>
+          <Notice tone="off">{t.staffEquipment.noDepartments}</Notice>
+          <div className="actions">
+            <Link className="btn primary" to="/scan">
+              <ScanLine {...iconProps} size={18} />
+              {t.report.scan}
+            </Link>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="muted" style={{ marginBottom: 12 }}>
+            {t.staffEquipment.intro}
+          </p>
+          <div className="search-bar">
+            <label className="visually-hidden" htmlFor="staff-eq-search">
+              {t.staffEquipment.search}
+            </label>
+            <input
+              id="staff-eq-search"
+              className="input"
+              type="search"
+              placeholder={t.staffEquipment.search}
+              value={search}
+              onChange={(ev) => setSearch(ev.target.value)}
+            />
+            {departments.length > 1 && (
+              <div className="filters">
+                <select aria-label={t.team.departments} value={dept} onChange={(ev) => setDept(ev.target.value)}>
+                  <option value="">{t.staffEquipment.all}</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <Rows isEmpty={!rows.length} empty={equipment.length ? t.staffEquipment.noMatch : t.staffEquipment.empty}>
+            {rows.map((e) => (
+              <Row
+                key={e.id}
+                to={`/e/${encodeURIComponent(e.qrCode)}`}
+                thumb={<ModelThumb fileId={e.photoFileId} name={`${e.manufacturer} ${e.model}`} />}
+                title={e.typeName}
+                lines={[
+                  `${e.manufacturer} ${e.model}`,
+                  <>
+                    {t.equipment.serialShort} <span className="serial">{e.serialNumber}</span>
+                    {e.hospitalTag && <span className="sep">{e.hospitalTag}</span>}
+                    <span className="sep">{e.departmentName}</span>
+                  </>,
+                  e.openBreakdown && t.staffEquipment.openBreakdown(e.openBreakdown),
+                ]}
+                side={<EquipmentStatusPill status={e.status} />}
+              />
+            ))}
+          </Rows>
+        </>
+      )}
     </>
   );
 }
@@ -211,6 +300,7 @@ export function ReportForm({ qrCode }: { qrCode: string }) {
       const r = await post<ReportResult>("/report", { qrCode, problem });
       setDone(r);
       await qc.invalidateQueries({ queryKey: qk.myReports });
+      await qc.invalidateQueries({ queryKey: qk.myEquipment });
     } catch (err) {
       setErrs(fieldErrors(err));
       setError(errorMessage(err));

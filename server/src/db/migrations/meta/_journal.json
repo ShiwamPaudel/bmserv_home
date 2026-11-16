@@ -29,6 +29,13 @@
       "when": 1794810965655,
       "tag": "0003_model_photo",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794816901921,
+      "tag": "0004_staff_departments",
+      "breakpoints": true
     }
   ]
 }

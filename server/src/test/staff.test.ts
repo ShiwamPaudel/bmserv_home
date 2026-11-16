@@ -135,6 +135,22 @@ describe("hospital staff with notifications on", () => {
     expect(r.status).toBe(201);
     expect(ctx.pushed.map((p) => p.userId)).toEqual([ctx.lead.id]);
     expect(ctx.sent).toHaveLength(0); // the team email is only for staff reports
+
+    // Staff report the same equipment: added to the team's breakdown, shown in My reports, told when fixed.
+    const again = await ctx.staff.call<Any>("POST", "/report", { qrCode: qr, problem: "Screen went black" });
+    expect(again.json).toMatchObject({ again: true, id: r.json.id });
+    const mine = await ctx.staff.call<Any[]>("GET", "/my-reports");
+    expect(mine.json.map((m) => m.id)).toContain(r.json.id);
+    ctx.pushed.length = 0;
+    await ctx.lead.call("POST", `/breakdowns/${r.json.id}/close`, {
+      outcome: "fixed",
+      fixedBy: "in_house",
+      serviceEngineerName: null,
+      workDone: "Reseated the display cable",
+      partsReplaced: null,
+    });
+    const told = Object.fromEntries(ctx.pushed.map((p) => [p.userId, p.payload.url]));
+    expect(told).toEqual({ [ctx.staff.id]: "/my-reports", [ctx.engineer.id]: `/breakdowns/${r.json.id}` });
   });
 
   it("staff reporting can be turned off in Settings", async () => {
@@ -183,6 +199,34 @@ describe("model page", () => {
     expect(r.json.manuals).toEqual([]);
     expect(r.json.equipment.map((e: Any) => e.id)).toContain(base.equipmentId);
     expect((await ctx.staff.call("GET", `/models/${base.modelId}`)).status).toBe(403);
+  });
+});
+
+describe("staff departments", () => {
+  it("staff see the equipment in their departments now; only staff have departments", async () => {
+    expect((await ctx.staff.call<Any>("GET", "/my-equipment")).json).toEqual({ departments: [], equipment: [] });
+
+    const set = await ctx.lead.call<Any>("PATCH", `/team/${ctx.staff.id}`, { departmentIds: [base.department2Id, base.departmentId] });
+    expect(set.status).toBe(200);
+    expect([...set.json.departmentIds].sort()).toEqual([base.departmentId, base.department2Id].sort());
+    const mine = await ctx.staff.call<Any>("GET", "/my-equipment");
+    expect(mine.json.departments).toHaveLength(2);
+    expect(mine.json.equipment.map((e: Any) => e.id)).toEqual([base.equipmentId]);
+    expect(mine.json.equipment[0]).toMatchObject({ departmentId: base.departmentId, qrCode: qr });
+
+    await ctx.lead.call("PATCH", `/team/${ctx.staff.id}`, { departmentIds: [base.department2Id] });
+    expect((await ctx.staff.call<Any>("GET", "/my-equipment")).json.equipment).toEqual([]);
+
+    const bad = await ctx.lead.call<Any>("PATCH", `/team/${ctx.staff.id}`, { departmentIds: ["nope"] });
+    expect(bad.status).toBe(400);
+    expect(bad.json.error.fields).toHaveProperty("departmentIds");
+    expect((await ctx.staff.call("PATCH", `/team/${ctx.staff.id}`, { departmentIds: [base.departmentId] })).status).toBe(403);
+
+    // Other roles never keep departments.
+    const eng = await ctx.admin.call<Any>("PATCH", `/team/${ctx.engineer.id}`, { departmentIds: [base.departmentId] });
+    expect(eng.json.departmentIds).toEqual([]);
+    const team = await ctx.admin.call<Any[]>("GET", "/team");
+    expect(team.json.find((p) => p.id === ctx.staff.id)?.departmentIds).toEqual([base.department2Id]);
   });
 });
 

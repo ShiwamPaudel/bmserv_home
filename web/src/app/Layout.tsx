@@ -276,7 +276,7 @@ export function Layout() {
   );
 }
 
-/** Hospital staff: report a problem and see their reports. Nothing else. */
+/** Hospital staff: report a problem, the equipment in their departments, and their reports. Nothing else. */
 function StaffLayout() {
   const online = useOnline();
   const signOut = useSignOut();
@@ -284,6 +284,7 @@ function StaffLayout() {
   const me = useMe();
   const items = [
     { to: "/", label: t.nav.report, icon: ScanLine, end: true },
+    { to: "/my-equipment", label: t.nav.staffEquipment, icon: Package },
     { to: "/my-reports", label: t.nav.myReports, icon: ClipboardList },
     { to: "/account", label: t.nav.account, icon: User },
   ];

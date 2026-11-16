@@ -1,4 +1,4 @@
-// Report a problem from a label (hospital staff and team), my reports, and push notification devices.
+// Report a problem from a label (hospital staff and team), my reports, equipment in my departments (staff), and push notification devices.
 import { Hono } from "hono";
 import { pushEndpointSchema, pushSubscriptionSchema, reportSchema } from "@bmserv/shared/schemas/report";
 import { t } from "@bmserv/shared/terms";
@@ -16,6 +16,7 @@ reportRoutes.post("/report", requireAction("breakdown.report"), async (c) =>
   c.json(await report.reportProblem(c.get("actor"), await body(c, reportSchema)), 201),
 );
 reportRoutes.get("/my-reports", async (c) => c.json(await report.myReports(c.get("actor"))));
+reportRoutes.get("/my-equipment", async (c) => c.json(await report.myEquipment(c.get("actor"))));
 
 // ---- Notifications on this device (everyone) ----
 reportRoutes.get("/push", async (c) =>

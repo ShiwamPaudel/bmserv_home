@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Download, ExternalLink, FileImage, FileText, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { isManualKind, type FileKind, type FileOwnerType } from "@bmserv/shared/enums";
 import { t } from "@bmserv/shared/terms";
@@ -8,12 +9,64 @@ import { registerKeys } from "../lib/queryKeys";
 import type { FileRow } from "../lib/types";
 import { checkFile, formatBytes, openFile, uploadFile } from "../lib/upload";
 import { MomentText } from "../lib/dates";
-import { Confirm, Notice, Row, Rows, SelectField, Sheet, TextField, useToast } from "./ui";
+import { Confirm, iconProps, Notice, Row, Rows, SelectField, Sheet, TextField, useToast } from "./ui";
+
+const isImage = (mimeType: string) => mimeType.startsWith("image/");
+
+/** The file's kind at a glance: a PDF or an image, in a square like the model photo. */
+export function FileIcon({ mimeType }: { mimeType: string }) {
+  const Icon = isImage(mimeType) ? FileImage : FileText;
+  return (
+    <span className="file-icon" aria-hidden="true">
+      <Icon {...iconProps} size={22} />
+    </span>
+  );
+}
+
+export function fileTypeLabel(mimeType: string): string {
+  return isImage(mimeType) ? t.files.typeImage : t.files.typePdf;
+}
+
+/** Open, Download and (when allowed) Remove, as real buttons. */
+export function FileActions({
+  id,
+  title,
+  onError,
+  onRemove,
+}: {
+  id: string;
+  title: string;
+  onError: (message: string) => void;
+  onRemove?: () => void;
+}) {
+  const online = useOnline();
+  const run = (download: boolean) => {
+    if (!online) return onError(t.app.noConnection);
+    openFile(id, download).catch((e: Error) => onError(e.message));
+  };
+  return (
+    <div className="file-actions">
+      <button className="btn small" type="button" onClick={() => run(false)} aria-label={t.files.openTitle(title)}>
+        <ExternalLink {...iconProps} size={16} />
+        {t.files.open}
+      </button>
+      <button className="btn small" type="button" onClick={() => run(true)} disabled={!online} aria-label={t.files.downloadTitle(title)}>
+        <Download {...iconProps} size={16} />
+        {t.files.download}
+      </button>
+      {onRemove && (
+        <button className="btn small danger" type="button" onClick={onRemove} disabled={!online} aria-label={t.files.removeTitle(title)}>
+          <Trash2 {...iconProps} size={16} />
+          {t.files.remove}
+        </button>
+      )}
+    </div>
+  );
+}
 
 /** `readOnly`: open and download only (manuals on an equipment page are managed on the model's page). */
 export function FileRows({ files, empty, readOnly }: { files: FileRow[]; empty: string; readOnly?: boolean }) {
   const canRemove = useCan("file.remove") && !readOnly;
-  const online = useOnline();
   const qc = useQueryClient();
   const toast = useToast();
   const [removing, setRemoving] = useState<FileRow | null>(null);
@@ -25,31 +78,22 @@ export function FileRows({ files, empty, readOnly }: { files: FileRow[]; empty: 
         {files.map((f) => (
           <Row
             key={f.id}
-            title={`${t.fileKind[f.kind]}: ${f.title}`}
+            className="file-row"
+            thumb={<FileIcon mimeType={f.mimeType} />}
+            title={f.title}
             lines={[
               <>
-                {formatBytes(f.sizeBytes)}
+                {t.fileKind[f.kind]}
                 {f.note && <span className="sep">{f.note}</span>}
+              </>,
+              <>
+                {fileTypeLabel(f.mimeType)}, {formatBytes(f.sizeBytes)}
                 <span className="sep">
                   {t.files.addedOn} <MomentText ms={f.createdAt} />
                 </span>
               </>,
             ]}
-            side={
-              <span style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <button className="btn plain" type="button" onClick={() => (online ? openFile(f.id).catch((e: Error) => setErr(e.message)) : setErr(t.app.noConnection))}>
-                  {t.files.open}
-                </button>
-                <button className="btn plain" type="button" onClick={() => openFile(f.id, true).catch((e: Error) => setErr(e.message))} disabled={!online}>
-                  {t.files.download}
-                </button>
-                {canRemove && (
-                  <button className="btn plain" type="button" onClick={() => setRemoving(f)} disabled={!online}>
-                    {t.files.remove}
-                  </button>
-                )}
-              </span>
-            }
+            side={<FileActions id={f.id} title={f.title} onError={setErr} {...(canRemove ? { onRemove: () => setRemoving(f) } : {})} />}
           />
         ))}
       </Rows>

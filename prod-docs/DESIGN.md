@@ -94,7 +94,7 @@ Phone:
 - Bottom bar: Home, Equipment, Breakdowns, PMS, More. Active item: teal bar above its label.
 - More: Models, Manuals, Departments, Service providers, Team, Settings, My account, Sign out.
 - Desktop (≥ 960 px): same items in a navy left sidebar, Models and Manuals listed with the main items. Pages use the full width beside the sidebar up to 1440 px (`--w-page`); forms stay 560 px wide.
-- **Hospital staff** see only: Report a problem, My reports, My account (bottom bar on phone, sidebar on desktop; content width 880 px).
+- **Hospital staff** see only: Report a problem, Equipment (their departments), My reports, My account (bottom bar on phone, sidebar on desktop; content width 880 px).
 - **Scan** always in the top bar; opens the camera to read a BMServ label.
 - Add/edit: full screen on phone, side sheet on desktop.
 
@@ -130,6 +130,10 @@ Phone:
 
 **Report a problem** (hospital staff): intro line, one large "Scan a label" button, "Call the Biomedical Department", the last three reports. From a label: the equipment in a teal-edged box, one "What is wrong?" box, "Send to Biomedical team". After sending: confirmation, breakdown number, WhatsApp buttons for team members, "Report another problem".
 
+**Equipment** (hospital staff): one intro line, search field, department select (only with more than one department), equipment rows with photo and status pill; a third line "Already reported, BD-0001" when unresolved. A row opens Report a problem for it. No department: grey notice and "Scan a label".
+
+**Team, Hospital staff**: the person sheet shows "Departments" checkboxes (two columns where wide) when the role is Hospital staff; staff rows show "Departments: ICU, Emergency" or "No department yet".
+
 **Department page**: Here now; Belongs here but elsewhere.
 
 **Manuals screen**: one search field; results as rows "Service manual: Dräger Savina 300", second line size and date added; tap opens.
@@ -149,6 +153,9 @@ Phone:
 - **Repeatable list field** (contacts, extra addresses): one input per line with "Add another phone" / "Add another email" and a remove control per line.
 - **Phone field**: country code select ("+977 Nepal" first, then India and others, "Other code" to type one) beside the number. Default from Settings.
 - **PMS frequency field**: "Every [ 6 ] [ Months ▾ ]" with Days, Months, Years; Months by default.
+- **File row** (manuals, documents): a 44 px teal-wash square with a file icon (PDF or image) at the start; title; kind (and model link on Manuals); "PDF, 37 KB" and the added date. Outlined buttons with icons on the right: Open, Download, and Remove (red outline) where allowed; on phones (< 720 px) they sit under the text. The row itself is not a link.
+- **Section header actions** ("Upload manual", "Add coverage", "Print service history"): small outlined navy buttons, never bare text.
+- **Buttons** have a hover state (light grey fill; primary slightly lighter; danger red wash) and move down 1 px when pressed.
 - **Switch**: label and help on the left, a 48 × 28 px pill switch on the right (navy when on); for on/off settings.
 - **WhatsApp button**: secondary button with a message icon and the word WhatsApp, in WhatsApp green (`--whatsapp`) on white; opens wa.me in a new tab. Hidden when Settings turn WhatsApp buttons off.
 - **Card** (My account, Home charts): white, 1 px border, 10 px corners, no shadow.
@@ -184,7 +191,7 @@ A4 portrait, no app margins, 8 cells (2 across × 4 down). **Each label 105 × 7
 - QR 36 × 36 mm including quiet zone, black on white, error correction M.
 - Hospital name Barlow Semi Condensed 600 12 pt; equipment type 14 pt; serial IBM Plex Mono 500 12 pt; other lines 9 pt.
 - Small navy diagonal corner mark top-left (section 10). Everything else black for black-and-white printers.
-- Before printing: A4 preview, "Start at position" as a 2 × 4 grid picker, "Print" button, and the note "Print at 100 % (actual size)".
+- **Print labels screen** sits inside the app (sidebar, top and bottom bars; none of it prints). Desktop ≥ 1100 px: a 300 px white panel (sticky) beside a grey preview area; phone: panel above preview. Panel: label count in navy with the number of A4 sheets; "Start at position" as a small A4 sheet (2 × 4, A4 proportions): used positions grey and struck through, positions the new labels fill in teal wash, the start in navy, the rest white, with a three-item legend; full-width "Print" with a printer icon and the note "Print at 100 % (actual size)" under it; after printing, "Did the labels print correctly?". Preview: header "Preview" and sheet count; each A4 sheet white with a 1 px border, shrunk to fit; empty positions show their number in light grey (screen only).
 
 ## 9. Words
 

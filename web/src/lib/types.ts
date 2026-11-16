@@ -31,7 +31,17 @@ export type Me = {
   appUrl: string;
 };
 
-export type Person = { id: string; name: string; username: string; email: string; phone: string; role: Role; isActive: boolean };
+export type Person = {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  phone: string;
+  role: Role;
+  isActive: boolean;
+  /** Hospital staff only. */
+  departmentIds: string[];
+};
 
 export type Settings = {
   hospitalName: string;
@@ -377,6 +387,24 @@ export type ReportResult = {
   again: boolean;
   whatsapp: { text: string; contacts: { name: string; phone: string; role: Role }[] };
   countryCode: string;
+};
+
+export type MyEquipment = {
+  departments: { id: string; name: string }[];
+  equipment: {
+    id: string;
+    qrCode: string;
+    typeName: string;
+    manufacturer: string;
+    model: string;
+    serialNumber: string;
+    hospitalTag: string | null;
+    departmentId: string;
+    departmentName: string;
+    status: EquipmentStatus;
+    photoFileId: string | null;
+    openBreakdown: string | null;
+  }[];
 };
 
 export type MyReport = {

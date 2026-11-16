@@ -135,9 +135,11 @@ Conventions: text ids (nanoid). Date-only = text `YYYY-MM-DD` (AD). Moments = in
 
 **activity_log**: `id, user_id, action, subject_type, subject_id, summary, created_at`
 
+**staff_departments** (hospital staff only; replaced as a whole when Team saves the person; removed when the role changes from Hospital staff): `user_id, department_id, created_at`, primary key (user_id, department_id)
+
 **push_subscriptions** (one row per browser with notifications on; machine data, deleted when the push service answers 404/410): `id, user_id, endpoint (unique), p256dh, auth, user_agent, created_at, last_sent_at`
 
-Migrations: `0000_init`, `0001_date_display`, `0002_staff_push_pms_units` (settings columns, model and coverage PMS units, push_subscriptions; copies `pms_every_months` into `pms_every`), `0003_model_photo`.
+Migrations: `0000_init`, `0001_date_display`, `0002_staff_push_pms_units` (settings columns, model and coverage PMS units, push_subscriptions; copies `pms_every_months` into `pms_every`), `0003_model_photo`, `0004_staff_departments`.
 
 ### Rules that live in services
 
@@ -153,7 +155,7 @@ Migrations: `0000_init`, `0001_date_display`, `0002_staff_push_pms_units` (setti
 - **Daily emails are due** for a breakdown when: status `with_provider`, no current pause, `last_email_on` < today (Nepal), local time ≥ `settings.daily_email_time`, and `sent_to_provider_at` is more than 12 hours ago. "Send now" sets `last_email_on` to today.
 - **Service history** is assembled on request in `services/history.ts`. No history table.
 - **Today** is the date in `Asia/Kathmandu`.
-- **Hospital staff** (`role = staff`) pass `staffGate` (`lib/http.ts`) only for `/api/me`, `/api/me/password`, `/api/report*`, `/api/my-reports`, `/api/push*` and `/api/files/:id/image`; everything else is 403.
+- **Hospital staff** (`role = staff`) pass `staffGate` (`lib/http.ts`) only for `/api/me`, `/api/me/password`, `/api/report*`, `/api/my-reports`, `/api/my-equipment`, `/api/push*` and `/api/files/:id/image`; everything else is 403.
 - **Report a problem** (`services/report.ts`): by QR code; an unresolved breakdown of that equipment gets a note instead of a second breakdown; otherwise `recordBreakdown` with the responsible person from settings (else first active Lead, else Admin). Notifications in `services/notify.ts` (push to the team except the actor; team email `breakdown:{id}:reported` for staff reports; push to the recorder on close).
 - **Correlated subqueries** in `sql` templates use `ref(column)` (`lib/sqlRef.ts`): Drizzle drops the table name in single-table selects, which made every department and model count 0.
 
@@ -165,7 +167,7 @@ REST + JSON under `/api`. Session required except `/api/auth/*`, `/api/jobs/*` a
 |---|---|
 | Sign-in | `/api/auth/*` |
 | Me | `GET /api/me` (user, hospital name, phone, date display, country code, WhatsApp and staff-report switches, push public key, redirect), `PATCH /api/me`, `POST /api/me/password` |
-| Report (staff and team) | `GET /api/report/:qrCode`, `POST /api/report`, `GET /api/my-reports` |
+| Report (staff and team) | `GET /api/report/:qrCode`, `POST /api/report`, `GET /api/my-reports` (recorded by me or I added a report note), `GET /api/my-equipment` (staff: equipment whose current department is one of theirs) |
 | Notifications | `GET /api/push` (public key, device count), `POST /api/push/subscriptions`, `POST /api/push/subscriptions/remove`, `POST /api/push/test` |
 | Team | `GET/POST /api/team`, `PATCH /api/team/:id`, `POST /api/team/:id/reset-password` |
 | Settings | `GET /api/settings`, `PATCH /api/settings` (any subset of fields: one tab at a time) |
@@ -222,7 +224,7 @@ Each tick:
 
 ## 10. Web app
 
-- Routes: `/sign-in`, `/` (Home; Report a problem for hospital staff), `/my-reports`, `/models`, `/models/:id`, `/equipment`, `/equipment/new`, `/equipment/import`, `/equipment/:id`, `/equipment/:id/edit`, `/e/:qrCode`, `/scan`, `/breakdowns`, `/breakdowns/new`, `/breakdowns/:id`, `/breakdowns/:id/ask`, `/pms`, `/manuals`, `/departments`, `/departments/:id`, `/service-providers`, `/service-providers/:id`, `/team`, `/settings`, `/account`, `/more`, `/print/labels`.
+- Routes: `/sign-in`, `/` (Home; Report a problem for hospital staff), `/my-reports`, `/my-equipment` (staff), `/models`, `/models/:id`, `/equipment`, `/equipment/new`, `/equipment/import`, `/equipment/:id`, `/equipment/:id/edit`, `/e/:qrCode`, `/scan`, `/breakdowns`, `/breakdowns/new`, `/breakdowns/:id`, `/breakdowns/:id/ask`, `/pms`, `/manuals`, `/departments`, `/departments/:id`, `/service-providers`, `/service-providers/:id`, `/team`, `/settings`, `/account`, `/more`, `/print/labels`.
 - TanStack Query for server data; one query-key file; invalidate after changes.
 - All words from `shared/terms.ts`.
 - QR content: `{APP_URL}/e/{qr_code}`.
