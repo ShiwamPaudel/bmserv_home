@@ -11,6 +11,7 @@ import "./styles/screens.css";
 import { App } from "./app/App";
 import { ApiError } from "./lib/api";
 import { persistCache, restoreCache } from "./lib/offlineCache";
+import { startInstallCapture } from "./lib/install";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +25,7 @@ const queryClient = new QueryClient({
     mutations: { networkMode: "online" },
   },
 });
+startInstallCapture();
 restoreCache(queryClient);
 persistCache(queryClient);
 

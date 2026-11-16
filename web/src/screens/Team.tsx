@@ -23,6 +23,7 @@ import {
   TextField,
   useToast,
 } from "../components/ui";
+import { SetupTabs } from "../components/SetupTabs";
 
 type Edit = { mode: "add" } | { mode: "edit"; person: Person } | { mode: "reset"; person: Person };
 
@@ -31,7 +32,11 @@ export function Team() {
   const allowed = useCan("team.manageEngineers");
   const me = useMe();
   const q = useQuery({ queryKey: qk.team, queryFn: () => get<Person[]>("/team"), enabled: allowed });
-  const depts = useQuery({ queryKey: qk.departments, queryFn: () => get<DepartmentListItem[]>("/departments"), enabled: allowed });
+  const depts = useQuery({
+    queryKey: qk.departments,
+    queryFn: () => get<DepartmentListItem[]>("/departments"),
+    enabled: allowed,
+  });
   const deptName = new Map((depts.data ?? []).map((d) => [d.id, d.name]));
   const [edit, setEdit] = useState<Edit | null>(null);
   const [showInactive, setShowInactive] = useState(false);
@@ -47,11 +52,12 @@ export function Team() {
 
   return (
     <>
-      <PageHead title={t.team.title}>
+      <PageHead title={t.nav.setup}>
         <button className="btn primary" onClick={() => setEdit({ mode: "add" })}>
           {t.team.add}
         </button>
       </PageHead>
+      <SetupTabs />
       <Checkbox checked={showInactive} onChange={setShowInactive}>
         {t.team.showInactive}
       </Checkbox>
@@ -299,25 +305,25 @@ function DepartmentsField({
   return (
     <div className={`field${error ? " has-error" : ""}`}>
       <fieldset>
-      <legend>{t.team.departments}</legend>
-      <div className="help" style={{ marginBottom: 4 }}>
-        {t.team.departmentsHelp}
-      </div>
-      {shown.length === 0 ? (
-        <p className="muted">{t.team.noDepartments}</p>
-      ) : (
-        <div className="check-grid">
-          {shown.map((d) => (
-            <Checkbox
-              key={d.id}
-              checked={value.includes(d.id)}
-              onChange={(on) => onChange(on ? [...value, d.id] : value.filter((x) => x !== d.id))}
-            >
-              {d.name}
-            </Checkbox>
-          ))}
+        <legend>{t.team.departments}</legend>
+        <div className="help" style={{ marginBottom: 4 }}>
+          {t.team.departmentsHelp}
         </div>
-      )}
+        {shown.length === 0 ? (
+          <p className="muted">{t.team.noDepartments}</p>
+        ) : (
+          <div className="check-grid">
+            {shown.map((d) => (
+              <Checkbox
+                key={d.id}
+                checked={value.includes(d.id)}
+                onChange={(on) => onChange(on ? [...value, d.id] : value.filter((x) => x !== d.id))}
+              >
+                {d.name}
+              </Checkbox>
+            ))}
+          </div>
+        )}
       </fieldset>
       {error && <div className="error">{error}</div>}
     </div>
@@ -399,7 +405,10 @@ function PeopleRows({
               </>,
               deptName &&
                 (p.departmentIds.length
-                  ? `${t.team.departments}: ${p.departmentIds.map((id) => deptName.get(id) ?? "").filter(Boolean).join(", ")}`
+                  ? `${t.team.departments}: ${p.departmentIds
+                      .map((id) => deptName.get(id) ?? "")
+                      .filter(Boolean)
+                      .join(", ")}`
                   : t.team.departmentsNone),
             ]}
             side={!p.isActive ? <Pill tone="off">{t.status.deactivated}</Pill> : undefined}

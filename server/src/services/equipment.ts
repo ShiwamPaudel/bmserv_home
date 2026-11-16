@@ -2,8 +2,9 @@ import { and, asc, count, desc, eq, inArray, isNull, ne, sql, type SQL } from "d
 import { manualKinds, type EquipmentStatus, type FileKind } from "@bmserv/shared/enums";
 import { serialKey, tagKey } from "@bmserv/shared/keys";
 import { can } from "@bmserv/shared/permissions";
-import type { EquipmentInput, EquipmentUpdate } from "@bmserv/shared/schemas/equipment";
-import { todayNepal } from "@bmserv/shared/dates";
+import type { EquipmentInput, EquipmentUpdate, EquipmentCreate } from "@bmserv/shared/schemas/equipment";
+import { insertCoverage } from "./coverage";
+import { addDays, todayNepal } from "@bmserv/shared/dates";
 import { coverageLastDay, isCoverageCurrent } from "@bmserv/shared/pms";
 import { t } from "@bmserv/shared/terms";
 import { getDb, type Conn } from "../db/client";
@@ -26,7 +27,8 @@ import { badRequest, conflict, forbidden, notFound } from "../lib/errors";
 import { newId, newQrCode } from "../lib/ids";
 import type { Actor } from "../lib/http";
 import { logActivity } from "./activity";
-import { equipmentRows, hasCurrentCoverage, textSearch, withAway } from "./equipmentRows";
+import { coverageEndingBy, equipmentRows, hasCurrentCoverage, hasCurrentCoverageOfType, textSearch, withAway } from "./equipmentRows";
+import { getSettings } from "./settings";
 
 export type EquipmentFilters = {
   q?: string | undefined;
@@ -34,6 +36,8 @@ export type EquipmentFilters = {
   status?: string | undefined;
   coverage?: string | undefined;
   providerId?: string | undefined;
+  /** Days ahead that count as "ending soon" (Settings). */
+  coverageWarnDays?: number | undefined;
   limit?: number | undefined;
   offset?: number | undefined;
 };
@@ -48,13 +52,17 @@ function filterWhere(f: EquipmentFilters, today: string): SQL | undefined {
   if (f.status === "label") parts.push(eq(equipment.labelOutdated, true));
   if (f.coverage === "under") parts.push(hasCurrentCoverage(today));
   if (f.coverage === "none") parts.push(sql`not ${hasCurrentCoverage(today)}`);
+  if (f.coverage === "warranty" || f.coverage === "amc" || f.coverage === "cmc") parts.push(hasCurrentCoverageOfType(today, f.coverage));
+  if (f.coverage === "ending") parts.push(coverageEndingBy(today, addDays(today, f.coverageWarnDays ?? 30)));
   if (f.providerId) parts.push(eq(equipment.serviceProviderId, f.providerId));
   return parts.length ? and(...parts) : undefined;
 }
 
-export async function listEquipment(f: EquipmentFilters) {
+export async function listEquipment(filters: EquipmentFilters) {
   const db = getDb();
   const today = todayNepal();
+  const coverageWarnDays = (await getSettings()).coverageWarnDays;
+  const f = { ...filters, coverageWarnDays };
   const where = filterWhere(f, today);
   const limit = Math.min(f.limit ?? 100, 500);
   const [rows, total] = await Promise.all([
@@ -69,7 +77,7 @@ export async function listEquipment(f: EquipmentFilters) {
       .innerJoin(equipmentModels, eq(equipmentModels.id, equipment.modelId))
       .where(where),
   ]);
-  return { rows: withAway(rows), total: total[0]?.n ?? 0 };
+  return { rows: withAway(rows), total: total[0]?.n ?? 0, today, coverageWarnDays };
 }
 
 async function assertSerialFree(conn: Conn, serial: string, exceptId?: string) {
@@ -158,7 +166,8 @@ export async function insertEquipment(tx: Conn, actor: Actor, input: EquipmentIn
   return id;
 }
 
-export async function createEquipment(actor: Actor, input: EquipmentInput) {
+/** New equipment, with its warranty when given (same transaction). */
+export async function createEquipment(actor: Actor, input: EquipmentInput & { warranty?: EquipmentCreate["warranty"] }) {
   const db = getDb();
   await assertSerialFree(db, input.serialNumber);
   await assertTagFree(db, input.hospitalTag);
@@ -172,6 +181,15 @@ export async function createEquipment(actor: Actor, input: EquipmentInput) {
       subjectId: newEqId,
       summary: `Added equipment S.N. ${input.serialNumber}`,
     });
+    if (input.warranty) {
+      await insertCoverage(tx, actor, newEqId, {
+        type: "warranty",
+        serviceProviderId: input.serviceProviderId,
+        ...input.warranty,
+        contractNo: null,
+        notes: null,
+      });
+    }
     return newEqId;
   });
   return { id };

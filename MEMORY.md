@@ -10,14 +10,24 @@ Installable web app for a hospital Biomedical Department: equipment register by 
 
 ## 2. Current state
 
-- Phases 1–5 are **built and pass `npm run check`** (types, lint, 99 tests). Go-live steps of Phase 4 are not done.
+- Phases 1–5 are **built and pass `npm run check`** (types, lint, 102 tests). Go-live steps of Phase 4 are not done.
 - Phase 5 (owner feedback): hospital staff departments and their Equipment list, Models screen + PMS frequency on the model (days/months/years), Hospital staff role and Report a problem from the QR, Web Push notifications, WhatsApp buttons, phone country codes, required provider contacts, Home overview charts, Settings tabs, My account redesign, full-width desktop, count bug fix.
-- Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo, 0004_staff_departments) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
+- Live services: Turso migrated (0000_init, 0001_date_display, 0002_staff_push_pms_units, 0003_model_photo, 0004_staff_departments, 0005_hospital_logo) and seeded (ABC Hospital settings + Admin `admin`); R2 put/get/delete works; Resend test email works via `onboarding@resend.dev`.
 - Checked: the Vercel bundle (`.vercel/output`) run locally against live Turso; signed in as the live Admin; every screen opens without errors.
 - **Not yet**: Vercel deploy (project set up with preset Other and environment values; needs the code on GitHub), Resend domain, git commit (owner asked not to commit yet). Staff report flow and notifications are tested by the server tests and typecheck, not yet tried in a browser as Hospital staff.
 - VAPID keys were generated into `.env.local` (2026-11-13). `.env.example` is now gitignored at the owner's request (local template only).
 - R2 CORS allows localhost and the hosted domain; on Vercel, `APP_URL` and `BETTER_AUTH_URL` are set to the hosted domain (owner, 2026-11-16). `.env.local` keeps both on http://localhost:5173.
 - Live address: none yet. Local: `npm run dev` → http://localhost:5173.
+- **Owner requests, 2026-11-16 (do not drop any; tick when built and tested):**
+  - [x] Staff departments + staff Equipment tab; My reports fix; Print labels inside the app; file rows with real buttons
+  - [x] Install popup on phones after sign-in (iPhone steps); checkbox/radio alignment in forms
+  - [x] Model search on Add equipment lists nothing until 2 letters are typed, then up to 8 matches
+  - [x] PMS: Due soon / Upcoming (12 months, by month) / Overdue / Done
+  - [x] Add equipment: warranty 1 year from installation by default (changeable or removable), saved with the equipment
+  - [x] Coverage views: equipment rows show coverage and last day; filters Under warranty / AMC / CMC / ending soon / not covered; Home coverage chart links to them
+  - [x] Hospital setup menu item with tabs: Models, Departments, Service providers, Team
+  - [x] **Reports** menu item above Settings: date range presets + other dates, report page, highlights, **PDF (print) and PowerPoint export with the logo**
+  - [x] Settings > Hospital: upload the hospital logo (R2; on the report cover, PDF and every PowerPoint slide)
 - Next step: owner creates the Vercel project (push to GitHub first) → deploy (ARCHITECTURE section 12) → try as Admin, Lead, Engineer → tick the "Deployed" boxes in PHASES.md → commit.
 
 ## 3. Where to look
@@ -42,16 +52,16 @@ shared/src/          terms.ts (all words) enums.ts permissions.ts dates.ts (BS/A
 server/src/          app.ts (Hono app, routes, errors, /health, /api/jobs/tick) index.ts (Node entry) vercel.ts (Vercel entry) env.ts auth.ts
 server/src/db/       schema/{auth,app}.ts client.ts migrate.ts seed.ts migrations/
 server/src/routes/   report.ts (report, my-reports, push) core.ts (me, team, settings, departments, providers, models) register.ts (equipment, moves, files, coverage, PMS, import, export, home) breakdowns.ts
-server/src/services/ one file per subject: team settings departments providers models equipment equipmentRows moves files coverage pms breakdowns history home (+ dashboard stats) importer exportCsv activity push (only web-push caller) notify (who hears about a breakdown) report (staff reports)
+server/src/services/ one file per subject: team settings departments providers models equipment equipmentRows moves files coverage pms breakdowns history home (+ dashboard stats) reports importer exportCsv activity push (only web-push caller) notify (who hears about a breakdown) report (staff reports)
 server/src/lib/      http.ts (session, roles, staffGate) sqlRef.ts (ref(): table-qualified column for subqueries) errors ids r2
 server/src/emails/   send.ts (only Resend caller: log + dedupe + redirect) templates.ts (PRD 6 wording) recipients.ts
 server/src/jobs/     tick.ts (the scheduled work) scheduler.ts (node-cron, non-Vercel hosts)
 server/src/scripts/  check-services.ts r2-cors.ts migrate.ts vercel-output.ts (Build Output API)
 server/src/test/     setup.ts (in-memory libSQL, fake email + push transports, signed-in roles incl. staff) auth.test.ts rules.test.ts staff.test.ts
 web/src/app/         App.tsx (routes; TeamOnly group) Layout.tsx (top bar, bottom bar, sidebar, guard, StaffLayout, TeamOnly/TeamOr, PWA prompts)
-web/src/screens/     SignIn Home (overview + attention) Account Team Settings (tabs) More Models (list + ModelPage) Departments Providers Manuals Pms Scan Report (staff) PrintLabels equipment/ breakdowns/
-web/src/components/  files.tsx (FileRows, FileActions, FileIcon, UploadSheet) ui.tsx (Pill Row(thumb, className) Fact fields PhoneField Switch WhatsAppButton Sheet Confirm Toast) charts.tsx ModelPhoto (thumb, picker) ModelFields PmsFrequencyField DateField EquipmentLine pmsSheets EmailRows
-web/src/lib/         api.ts types.ts queryKeys.ts hooks.ts dates.tsx upload.ts offlineCache.ts auth.ts push.ts (browser push) image.ts (shrink photos)
+web/src/screens/     SignIn Home (overview + attention) Reports Account Team Settings (tabs, logo) More Models (list + ModelPage) Departments Providers Manuals Pms Scan Report (staff) PrintLabels equipment/ breakdowns/
+web/src/components/  SetupTabs InstallPrompt files.tsx (FileRows, FileActions, FileIcon, UploadSheet) ui.tsx (Pill Row(thumb, className) Fact fields PhoneField Switch WhatsAppButton Sheet Confirm Toast) charts.tsx ModelPhoto (thumb, picker) ModelFields PmsFrequencyField DateField EquipmentLine pmsSheets EmailRows
+web/src/lib/         api.ts types.ts queryKeys.ts hooks.ts dates.tsx upload.ts offlineCache.ts auth.ts push.ts (browser push) image.ts (shrink photos) install.ts reportRange.ts reportInsights.ts reportPptx.ts
 web/src/print/       labelSheet.ts (+test) label.css
 web/src/styles/      tokens.css base.css screens.css
 web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.ico push-sw.js (push handlers, imported by the service worker)
@@ -100,6 +110,12 @@ web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.i
 | D38 | Hospital staff departments: table `staff_departments`; staff see equipment whose **current** department is one of theirs (where it is now); a row opens `/e/:qrCode` (Report a problem). Only staff keep departments; a person cannot change their own | Owner, 2026-11-16 |
 | D39 | My reports = breakdowns I recorded **or** added a report note to (a staff report on an already-open breakdown becomes a note); the fixed push goes to the recorder and every staff member who added a note | Owner: My reports looked empty |
 | D40 | Print labels is a route inside the Layout (`/print/labels`, TeamOnly); print CSS strips the app frame with `body:has(.label-screen)` | Owner: the all-white page felt disconnected |
+| D41 | Reports: `GET /api/reports` computes everything server-side; PDF = browser print (A4 print stylesheet, no PDF library); PowerPoint = `pptxgenjs` 4.0.1 in the browser, dynamic import; the logo is fetched as a data URL for the .pptx. BS mode uses Nepali months, fiscal quarters and the fiscal year (Shrawan–Asar) | Owner, 2026-11-16; no extra server load, charts stay editable |
+| D42 | Hospital logo: files row owner_type `hospital`, owner_id "1", kind photo; `settings.logo_file_id`; Admin only; kept as PNG (transparency) at most 800 px; replaced logo deleted from R2 at once | Owner, 2026-11-16 |
+| D43 | New equipment: optional `warranty` in POST /equipment, default 1 year from installation (ends start + 12 months − 1 day), provider = equipment's provider, PMS from the model; same transaction (`insertCoverage`) | Owner, 2026-11-16 |
+| D44 | PMS "due" filter kept as "all from today" (Home, CSV); the screen uses soon (Settings window) and upcoming (to 12 months) | No change to Home or export |
+| D45 | "Hospital setup" groups Models, Departments, Service providers, Team; routes unchanged, tabs are links (`SetupTabs`) | Owner, 2026-11-16 |
+| D46 | Install popup: event caught at app start (`lib/install.ts`); phones/tablets only (coarse pointer, < 960 px); "Not now" snoozes 7 days | The event often fired on sign-in, before the layout existed |
 | D37 | Manuals are managed only on the model page (`/models/:id`); the equipment page lists them read-only with "Open model". Manual lists filter manual kinds (a model also owns its photo) | Owner: one manual per model, many units |
 
 ## 6. Open questions for the owner
@@ -113,7 +129,7 @@ web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.i
 
 ## 7. Installed versions
 
-Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7.22 · drizzle-orm 0.45.4 · drizzle-kit 0.31.11 · @libsql/client 0.18.0 · @aws-sdk/client-s3 + s3-request-presigner 3.1168.0 · resend 6.38.0 · node-cron 4.6.0 · zod 4.6.7 · nanoid 6.0.2 (server) · react 19.3.1 · web-push 3.6.7 (server) · react-router 7.18.5 · @tanstack/react-query 5.107.1 · vite 8.3.8 · @vitejs/plugin-react 6.3.0 · vite-plugin-pwa 2.0.0 · typescript 6.0.3 · vitest 5.1.0 · eslint 10.14.0 · nepali-date-converter 3.4.2 · qrcode 1.5.4 · jsqr 1.4.0 · lucide-react 1.72.0 · esbuild 0.28.2 · tsx 4.23.15
+Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7.22 · drizzle-orm 0.45.4 · drizzle-kit 0.31.11 · @libsql/client 0.18.0 · @aws-sdk/client-s3 + s3-request-presigner 3.1168.0 · resend 6.38.0 · node-cron 4.6.0 · zod 4.6.7 · nanoid 6.0.2 (server) · react 19.3.1 · web-push 3.6.7 (server) · react-router 7.18.5 · pptxgenjs 4.0.1 (web) · @tanstack/react-query 5.107.1 · vite 8.3.8 · @vitejs/plugin-react 6.3.0 · vite-plugin-pwa 2.0.0 · typescript 6.0.3 · vitest 5.1.0 · eslint 10.14.0 · nepali-date-converter 3.4.2 · qrcode 1.5.4 · jsqr 1.4.0 · lucide-react 1.72.0 · esbuild 0.28.2 · tsx 4.23.15
 
 ## 8. Gotchas
 
@@ -139,6 +155,7 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 
 Newest first: date, what changed, docs touched.
 
+- 2026-11-16 — Reports (period, highlights, PDF and PowerPoint with logo), hospital logo (migration 0005), Hospital setup menu, 1-year default warranty on new equipment, coverage on rows and filters, PMS Due soon/Upcoming, install popup, model search, form alignment. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Hospital staff departments + staff Equipment tab (migration 0004), My reports includes reports added to an open breakdown, Print labels redesigned inside the app, file rows with real buttons and type icons, section actions as outlined buttons, button hover states. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Model page (photo, PMS, manuals once per model, its equipment); manuals no longer uploaded from equipment pages; manual lists exclude the model photo. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.
 - 2026-11-16 — Model photos (R2, shown beside names), Home crash from old offline data fixed, error screen, README trimmed, `.env.example` gitignored; migration 0003. Docs: PRD, ARCHITECTURE, DESIGN, PHASES, MEMORY.

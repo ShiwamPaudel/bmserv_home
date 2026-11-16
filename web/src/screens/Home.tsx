@@ -196,10 +196,10 @@ function Overview({ d }: { d: HomeData }) {
           <SegmentBar
             emptyText={t.home.chartEmpty}
             segments={[
-              { key: "warranty", label: t.coverageType.warranty, value: s.coverageMix.warranty, color: "var(--chart-1)" },
-              { key: "amc", label: t.coverageType.amc, value: s.coverageMix.amc, color: "var(--chart-2)" },
-              { key: "cmc", label: t.coverageType.cmc, value: s.coverageMix.cmc, color: "var(--chart-3)" },
-              { key: "none", label: t.home.noCoverage, value: s.total - s.covered, color: "var(--chart-none)" },
+              { key: "warranty", label: t.coverageType.warranty, value: s.coverageMix.warranty, color: "var(--chart-1)", to: "/equipment?coverage=warranty" },
+              { key: "amc", label: t.coverageType.amc, value: s.coverageMix.amc, color: "var(--chart-2)", to: "/equipment?coverage=amc" },
+              { key: "cmc", label: t.coverageType.cmc, value: s.coverageMix.cmc, color: "var(--chart-3)", to: "/equipment?coverage=cmc" },
+              { key: "none", label: t.home.noCoverage, value: s.total - s.covered, color: "var(--chart-none)", to: "/equipment?coverage=none" },
             ]}
           />
         </ChartCard>

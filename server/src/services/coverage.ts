@@ -27,28 +27,31 @@ async function assertProvider(conn: Conn, id: string) {
   if (!r[0]) throw badRequest(t.fields.choose, { serviceProviderId: t.fields.choose });
 }
 
+/** Inserts coverage and its PMS schedule inside a transaction. Shared by Add coverage and new equipment's warranty. */
+export async function insertCoverage(tx: Conn, actor: Actor, equipmentId: string, input: CoverageInput) {
+  const id = newId();
+  const schedule = pmsSchedule(input.startsOn, input.endsOn, input.pmsEvery, input.pmsUnit);
+  await tx.insert(coverage).values({ id, equipmentId, ...input, createdBy: actor.id });
+  for (const v of schedule) {
+    await tx.insert(pmsVisits).values({ id: newId(), equipmentId, coverageId: id, number: v.number, dueOn: v.dueOn, status: "scheduled" });
+  }
+  await logActivity(tx, {
+    userId: actor.id,
+    action: "coverage.added",
+    subjectType: "equipment",
+    subjectId: equipmentId,
+    summary: `${t.coverageType[input.type]} added`,
+  });
+  return { id, pmsCount: schedule.length };
+}
+
 export async function addCoverage(actor: Actor, equipmentId: string, input: CoverageInput) {
   const db = getDb();
   const eqRow = await db.select({ id: equipment.id }).from(equipment).where(eq(equipment.id, equipmentId));
   if (!eqRow[0]) throw notFound();
   await assertProvider(db, input.serviceProviderId);
   await assertNoOverlap(db, equipmentId, input.startsOn, input.endsOn);
-  const id = newId();
-  const schedule = pmsSchedule(input.startsOn, input.endsOn, input.pmsEvery, input.pmsUnit);
-  await db.transaction(async (tx) => {
-    await tx.insert(coverage).values({ id, equipmentId, ...input, createdBy: actor.id });
-    for (const v of schedule) {
-      await tx.insert(pmsVisits).values({ id: newId(), equipmentId, coverageId: id, number: v.number, dueOn: v.dueOn, status: "scheduled" });
-    }
-    await logActivity(tx, {
-      userId: actor.id,
-      action: "coverage.added",
-      subjectType: "equipment",
-      subjectId: equipmentId,
-      summary: `${t.coverageType[input.type]} added`,
-    });
-  });
-  return { id, pmsCount: schedule.length };
+  return db.transaction((tx) => insertCoverage(tx, actor, equipmentId, input));
 }
 
 /** Editing coverage regenerates only future scheduled visits; done visits never change. */

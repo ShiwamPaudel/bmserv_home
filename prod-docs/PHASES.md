@@ -84,6 +84,12 @@ Why: owner feedback after first local testing (2026-11-13)
 - [x] Hospital staff departments (several per person): staff see the equipment in their departments and report from the list (migration 0004, applied to live Turso)
 - [x] My reports also shows reports added to an existing breakdown; those reporters are told when it is fixed
 - [x] Print labels screen inside the app layout (panel + A4 preview); printed sheet unchanged
+- [x] Install popup on phones; form choice alignment; model search lists nothing until typed
+- [x] PMS tabs Due soon / Upcoming / Overdue / Done
+- [x] New equipment gets a 1-year warranty by default (changeable); coverage on equipment rows and coverage filters
+- [x] Hospital setup menu (Models, Departments, Service providers, Team as tabs)
+- [x] Reports with date range, highlights, PDF and PowerPoint export (logo included)
+- [x] Hospital logo in Settings (migration 0005, applied to live Turso)
 - [x] File rows: type icon and real Open / Download / Remove buttons (Manuals, model and equipment pages); section actions as outlined buttons; button hover states
 - [ ] Tried as Admin, Lead, Engineer and Hospital staff on a phone (notifications, WhatsApp, report from a printed label)
 - [ ] VAPID keys added to Vercel; deployed; docs updated

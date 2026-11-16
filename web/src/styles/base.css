@@ -510,6 +510,13 @@ button.row-link:hover {
   margin-bottom: var(--s1);
   padding: 0;
 }
+/* Radio and checkbox choices inside a field keep their own layout (box, gap, text). */
+.field label.choice {
+  display: flex;
+  font-weight: 400;
+  margin: 0;
+  padding: var(--s2) 0;
+}
 .field .opt {
   font-weight: 400;
   color: var(--muted);
@@ -582,8 +589,9 @@ button.row-link:hover {
 .choice input {
   width: 20px;
   height: 20px;
-  margin-top: 2px;
+  margin: 2px 0 0;
   flex-shrink: 0;
+  accent-color: var(--navy);
 }
 .date-field {
   display: flex;
@@ -643,6 +651,21 @@ button.row-link:hover {
   color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
+}
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--s3);
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tabs a.active {
+  color: var(--navy);
+  font-weight: 500;
+  border-bottom-color: var(--teal);
 }
 .tabs button[aria-selected="true"] {
   color: var(--navy);

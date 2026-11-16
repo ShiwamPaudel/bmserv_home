@@ -8,7 +8,20 @@ import { qk } from "../lib/queryKeys";
 import type { DepartmentDetail, DepartmentListItem } from "../lib/types";
 import { DateText, MomentText } from "../lib/dates";
 import { EquipmentLine } from "../components/EquipmentLine";
-import { Checkbox, LoadError, Loading, PageHead, Pill, Row, Rows, Section, SheetForm, TextField, useToast } from "../components/ui";
+import {
+  Checkbox,
+  LoadError,
+  Loading,
+  PageHead,
+  Pill,
+  Row,
+  Rows,
+  Section,
+  SheetForm,
+  TextField,
+  useToast,
+} from "../components/ui";
+import { SetupTabs } from "../components/SetupTabs";
 
 export function Departments() {
   useTitle(t.departments.title);
@@ -18,13 +31,14 @@ export function Departments() {
   const [flash, setFlash] = useState<string | null>(null);
   return (
     <>
-      <PageHead title={t.departments.title}>
+      <PageHead title={t.nav.setup}>
         {canEdit && (
           <button className="btn primary" onClick={() => setAdding(true)}>
             {t.departments.add}
           </button>
         )}
       </PageHead>
+      <SetupTabs />
       {q.isLoading ? (
         <Loading />
       ) : q.error ? (
@@ -62,12 +76,18 @@ function DepartmentForm({
   onClose: () => void;
   onSaved: (id: string) => void;
 }) {
-  const [f, setF] = useState({ name: dept?.name ?? "", shortName: dept?.shortName ?? "", isActive: dept?.isActive ?? true });
+  const [f, setF] = useState({
+    name: dept?.name ?? "",
+    shortName: dept?.shortName ?? "",
+    isActive: dept?.isActive ?? true,
+  });
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
   const save = useSave((body: typeof f) =>
-    dept ? patch<{ id: string }>(`/departments/${dept.id}`, body) : post<{ id: string }>("/departments", { name: body.name, shortName: body.shortName }),
+    dept
+      ? patch<{ id: string }>(`/departments/${dept.id}`, body)
+      : post<{ id: string }>("/departments", { name: body.name, shortName: body.shortName }),
   );
   return (
     <SheetForm
@@ -90,8 +110,20 @@ function DepartmentForm({
         })
       }
     >
-      <TextField label={t.departments.name} value={f.name} onChange={(v) => setF({ ...f, name: v })} error={errs.name} />
-      <TextField label={t.departments.shortName} value={f.shortName} onChange={(v) => setF({ ...f, shortName: v })} error={errs.shortName} help={t.departments.shortNameHelp} optional />
+      <TextField
+        label={t.departments.name}
+        value={f.name}
+        onChange={(v) => setF({ ...f, name: v })}
+        error={errs.name}
+      />
+      <TextField
+        label={t.departments.shortName}
+        value={f.shortName}
+        onChange={(v) => setF({ ...f, shortName: v })}
+        error={errs.shortName}
+        help={t.departments.shortNameHelp}
+        optional
+      />
       {dept && (
         <Checkbox checked={!f.isActive} onChange={(v) => setF({ ...f, isActive: !v })}>
           {t.departments.makeInactive}
@@ -103,7 +135,10 @@ function DepartmentForm({
 
 export function DepartmentPage() {
   const { id = "" } = useParams();
-  const q = useQuery({ queryKey: qk.department(id), queryFn: () => get<DepartmentDetail>(`/departments/${id}`) });
+  const q = useQuery({
+    queryKey: qk.department(id),
+    queryFn: () => get<DepartmentDetail>(`/departments/${id}`),
+  });
   const canEdit = useCan("department.edit");
   const [editing, setEditing] = useState(false);
   useTitle(q.data?.department.name ?? t.departments.title);
@@ -123,7 +158,11 @@ export function DepartmentPage() {
       <Section title={t.departments.hereNow}>
         <Rows isEmpty={!hereNow.length} empty={t.departments.hereNowEmpty}>
           {hereNow.map((e) => (
-            <EquipmentLine key={e.id} e={e} extra={e.away ? t.departments.borrowedFrom(e.homeDepartmentName) : undefined} />
+            <EquipmentLine
+              key={e.id}
+              e={e}
+              extra={e.away ? t.departments.borrowedFrom(e.homeDepartmentName) : undefined}
+            />
           ))}
         </Rows>
       </Section>
@@ -136,7 +175,9 @@ export function DepartmentPage() {
               extra={
                 e.move ? (
                   <>
-                    {t.departments.isAt(e.currentDepartmentName)}, {t.departments.since.toLowerCase()} <MomentText ms={e.move.movedAt} />, {t.departments.movedBy.toLowerCase()} {e.move.movedByName}
+                    {t.departments.isAt(e.currentDepartmentName)}, {t.departments.since.toLowerCase()}{" "}
+                    <MomentText ms={e.move.movedAt} />, {t.departments.movedBy.toLowerCase()}{" "}
+                    {e.move.movedByName}
                     {e.move.expectedReturnOn && (
                       <>
                         . {t.departments.expectedReturn}: <DateText ad={e.move.expectedReturnOn} />
@@ -151,7 +192,9 @@ export function DepartmentPage() {
           ))}
         </Rows>
       </Section>
-      {editing && <DepartmentForm dept={department} onClose={() => setEditing(false)} onSaved={() => undefined} />}
+      {editing && (
+        <DepartmentForm dept={department} onClose={() => setEditing(false)} onSaved={() => undefined} />
+      )}
     </>
   );
 }

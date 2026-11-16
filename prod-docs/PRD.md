@@ -87,7 +87,7 @@ Coverage types: **Warranty**, **AMC** (Annual Maintenance Contract, visits and l
 
 ### F2. Hospital settings (Admin)
 One screen with tabs; each tab saves on its own.
-- **Hospital**: name (ABC Hospital), address, department name, department email, department phone.
+- **Hospital**: **logo** (PNG, JPG or WEBP; saves at once; shown on Reports and on their PDF and PowerPoint exports; a new logo replaces the old one in storage), name (ABC Hospital), address, department name, department email, department phone.
 - **Calendar and phone**: date display, Nepali calendar (BS) or English calendar (AD), for everyone, on screens, date pickers, labels and emails (default Nepali; dates are stored the same either way). Default country code for phone numbers and WhatsApp (default +977 Nepal; each number can use another code, for example +91 India).
 - **Emails**: daily email time (default 08:00 Nepal time; breakdown daily emails and PMS reminders go out once a day at this time); PMS reminder days before due date (default 3); extra addresses copied on every email to service providers; email the Biomedical team when hospital staff report a problem (default on).
 - **Home alerts**: PMS due soon window (default 7 days), coverage ending warning (default 30 days), daily emails paused too long (default 14 days).
@@ -110,7 +110,8 @@ One screen with tabs; each tab saves on its own.
 **Model**: equipment type (Ventilator), manufacturer, model, category (optional), **PMS frequency** (every N days, months or years; months by default; required for a new model), **photo** (optional; Lead or Admin). Unique by manufacturer + model. The photo shows as a small picture beside the model or equipment name in every list, on the equipment page and on Report a problem; changing it replaces the old photo, which is deleted from storage at once. Holds the manuals (F6). Added and edited on the **Models** screen, or inline while adding equipment. Each model has its own page: photo, PMS frequency, its **manuals** (uploaded and removed there, stored once for the model and shown on every equipment of that model, whatever the serial number) and the list of its equipment. The equipment page shows the model's manuals to open or download, with a link to the model page.
 
 **Equipment** fields entered:
-- Model (choose or add), serial number (required, unique, compared without case or spaces), hospital tag number (optional, unique).
+- Model (search with at least 2 letters, then choose from up to 8 matches; or add), serial number (required, unique, compared without case or spaces), hospital tag number (optional, unique).
+- **Warranty** (new equipment only): on by default for **1 year from the installation date**; the person may change the start, choose 6 months, 1, 2, 3 or 5 years or another end date, or untick it. Saved with the equipment as Warranty coverage with the equipment's service provider and the model's PMS frequency.
 - Service provider, home department, installed on (date) — required.
 - **Designated service engineers**: zero or more of that provider's service engineers. Any team member can change them.
 - Photo, notes, documents.
@@ -153,6 +154,7 @@ Done when: a duplicate serial number is refused with a link to the existing equi
 - Type (Warranty, AMC, CMC), service provider, start date, end date, contract number (optional), contract document (optional), "PMS every N months" (1, 2, 3, 4, 6, 12, or no PMS).
 - One active coverage per equipment at a time; can end early.
 - Equipment page shows "Under warranty until …", "Under AMC until …" or "Not under warranty or contract".
+- **Equipment list** shows each equipment's coverage and last day ("Warranty until 30 Sep 2027", amber when ending within the Settings window, "Not covered") and filters by: under any coverage, under warranty, under AMC, under CMC, coverage ending soon, not covered. The Home "Coverage now" chart opens these lists.
 - Home lists coverage ending in the next 30 days.
 
 ### F10. PMS
@@ -163,6 +165,7 @@ Done when: a duplicate serial number is refused with a link to the existing equi
 - Mark as done: date done, service engineer's name, remarks, optional service report. Last PMS and next PMS update by themselves.
 - Not done by its date: **Overdue** until done. A team member can send the reminder again.
 - When coverage ends, remaining PMS become **Not done**.
+- **PMS screen** tabs: **Due soon** (within the "PMS due soon" window in Settings), **Upcoming** (after that window, up to 12 months ahead, grouped by month), **Overdue**, **Done**.
 - Done when: equipment with expired coverage shows no upcoming PMS; the reminder goes once automatically; marking PMS 2 done makes PMS 3 the next PMS.
 
 ### F11. Breakdowns and daily emails
@@ -205,9 +208,15 @@ Each line opens what it describes. Nothing to show: say so plainly.
 - Download equipment, breakdowns and PMS lists as CSV.
 
 ### F15. Installable app
-- Installs to the home screen on Android, iOS and desktop.
+- Installs to the home screen on Android, iOS and desktop. On phones and tablets, after sign-in, a popup offers **Install app** (Android) or shows the Add to Home Screen steps (iPhone, iPad); "Not now" hides it for a week; never shown once installed or on desktop.
 - Offline: opens and shows what was last loaded, read-only, with "You are offline". Saving and opening manuals need a connection.
 - **Notifications (Web Push)**: each person turns them on per device under My account (iPhone: after adding BMServ to the Home Screen) and can send a test. The Biomedical team is notified of every new breakdown (except the one who recorded it); the person who recorded or reported a breakdown is notified when it is fixed or cannot be repaired. Settings can turn each off.
+
+### F17. Reports (Biomedical team)
+- **Reports** menu item (above Settings). Choose a period: this month, last month, this quarter, last quarter, this year, last year (in Nepali calendar mode: Nepali months, fiscal quarters and the fiscal year Shrawan to Asar), or other dates (at most 3 years).
+- The page is built for that period: cover (hospital logo, name, period, prepared date); key figures (equipment and added, uptime, breakdowns reported and by hospital staff, fixed in-house or by provider, median and average time to fix, still open, PMS done of due, under coverage); **highlights** (plain sentences: uptime, breakdowns, time to fix, in-house share, department and equipment type with most breakdowns, repeated breakdowns, oldest open, PMS done and not done, coverage, renewals due in 90 days, equipment added); breakdowns per month, by department, by equipment type, repeated and longest open; service providers (breakdowns, fixed, median time to fix, PMS due and done); PMS (on time, late, not done, not yet; due and done per month); coverage at the end of the period, started and ended, ending in the next 90 days; equipment status, by department, added in the period; moves, emails to service providers and PMS reminders.
+- **Download PDF** (the browser's Save as PDF, A4) and **Download PowerPoint** (.pptx with editable charts, the logo on the cover and in every slide's footer).
+- Done when: the Lead picks "Last month", downloads the PowerPoint and presents it without editing.
 
 ### F16. Hospital staff report a problem
 - Admin or Lead adds hospital staff under Team with the role **Hospital staff** (name, username, phone, email, temporary password) and ticks their **departments** (none, one or several; changeable later).

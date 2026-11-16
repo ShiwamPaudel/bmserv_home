@@ -23,6 +23,7 @@ export type Me = {
     departmentPhone: string;
     dateDisplay: DateDisplay;
     countryCode: string;
+    logoFileId: string | null;
     whatsappButtons: boolean;
     staffReports: boolean;
   };
@@ -44,6 +45,7 @@ export type Person = {
 };
 
 export type Settings = {
+  logoFileId: string | null;
   hospitalName: string;
   hospitalAddress: string | null;
   departmentName: string;
@@ -83,6 +85,9 @@ export type EquipmentRow = {
   currentDepartmentName: string;
   homeDepartmentId: string;
   homeDepartmentName: string;
+  /** Current coverage today; null when not covered. */
+  coverageType?: CoverageType | null;
+  coverageLastDay?: string | null;
   providerId: string;
   providerName: string;
   installedOn: string;

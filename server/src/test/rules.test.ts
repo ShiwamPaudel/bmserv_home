@@ -220,6 +220,16 @@ describe("coverage and PMS (F9, F10)", () => {
     expect((await ctx.lead.call("PATCH", `/pms/${visits1.json[0].id}`, { dueOn: due })).status).toBe(200);
     expect((await ctx.lead.call("PATCH", `/pms/${visits2.json[0].id}`, { dueOn: due })).status).toBe(200);
 
+    // The PMS screen splits "due" into Due soon (Settings window) and Upcoming (after it, up to a year).
+    const soonDays = (await ctx.admin.call<Any>("GET", "/settings")).json.pmsSoonDays as number;
+    const soon = await ctx.lead.call<Any[]>("GET", `/pms?filter=soon&equipment=${eq2.json.id}`);
+    const upcoming = await ctx.lead.call<Any[]>("GET", `/pms?filter=upcoming&equipment=${eq2.json.id}`);
+    expect(soon.json.map((v) => v.dueOn)).toEqual([due]);
+    expect(upcoming.json.length).toBeGreaterThan(0);
+    for (const v of upcoming.json) {
+      expect(v.dueOn > addDays(today, soonDays) && v.dueOn <= addDays(today, 365)).toBe(true);
+    }
+
     const before = ctx.sent.length;
     const early = await sendDuePmsReminders(atNepal(today, "07:00"));
     expect(early.sent).toBe(0);

@@ -1,10 +1,10 @@
 import { and, asc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
-import { isManualKind, manualKinds, maxBytesFor, type FileKind, type FileOwnerType } from "@bmserv/shared/enums";
+import { HOSPITAL_OWNER_ID, isManualKind, manualKinds, maxBytesFor, type FileKind, type FileOwnerType } from "@bmserv/shared/enums";
 import { can } from "@bmserv/shared/permissions";
 import type { UploadRequest } from "@bmserv/shared/schemas/files";
 import { t } from "@bmserv/shared/terms";
 import { getDb } from "../db/client";
-import { breakdowns, coverage, equipment, equipmentModels, files, pmsVisits, user } from "../db/schema";
+import { breakdowns, coverage, equipment, equipmentModels, files, pmsVisits, settings, user } from "../db/schema";
 import { badRequest, forbidden, notFound } from "../lib/errors";
 import { newId } from "../lib/ids";
 import type { Actor } from "../lib/http";
@@ -18,6 +18,7 @@ const kindsFor: Record<FileOwnerType, readonly FileKind[]> = {
   coverage: ["contract"],
   pms_visit: ["service_report"],
   breakdown: ["service_report", "photo", "other"],
+  hospital: ["photo"],
 };
 
 const prefix: Record<FileOwnerType, string> = {
@@ -26,6 +27,7 @@ const prefix: Record<FileOwnerType, string> = {
   coverage: "coverage",
   pms_visit: "pms",
   breakdown: "breakdowns",
+  hospital: "hospital",
 };
 
 export function safeFileName(name: string): string {
@@ -43,6 +45,7 @@ function humanLimit(kind: FileKind): string {
 }
 
 async function ownerExists(type: FileOwnerType, id: string): Promise<boolean> {
+  if (type === "hospital") return id === HOSPITAL_OWNER_ID;
   const db = getDb();
   const table = { model: equipmentModels, equipment, coverage, pms_visit: pmsVisits, breakdown: breakdowns }[type];
   const r = await db.select({ id: table.id }).from(table).where(eq(table.id, id));
@@ -54,6 +57,8 @@ export async function requestUpload(actor: Actor, input: UploadRequest) {
   if (!kindsFor[input.ownerType].includes(input.kind)) throw badRequest(t.fields.choose, { kind: t.fields.choose });
   // A model's photo is part of the model: only those who edit models may set it. Photos are images, never PDF.
   if (input.ownerType === "model" && input.kind === "photo" && !can(actor.role, "model.edit")) throw forbidden();
+  // The hospital logo is a setting: Admin only.
+  if (input.ownerType === "hospital" && !can(actor.role, "settings.edit")) throw forbidden();
   if (input.kind === "photo" && !input.mimeType.startsWith("image/")) throw badRequest(t.files.photoOnly, { file: t.files.photoOnly });
   if (input.sizeBytes > maxBytesFor(input.kind)) {
     throw badRequest(t.files.tooBig(humanLimit(input.kind)), { file: t.files.tooBig(humanLimit(input.kind)) });
@@ -112,9 +117,22 @@ export async function markReady(actor: Actor, id: string) {
       }
       await tx.update(equipmentModels).set({ photoFileId: id }).where(eq(equipmentModels.id, f.ownerId));
     }
+    if (f.ownerType === "hospital") {
+      // A new logo replaces the old one, which leaves R2 at once (like a model photo).
+      const s = (await tx.select({ logoFileId: settings.logoFileId }).from(settings).where(eq(settings.id, 1)))[0];
+      if (s?.logoFileId && s.logoFileId !== id) {
+        const old = (await tx.select({ id: files.id, storageKey: files.storageKey }).from(files).where(eq(files.id, s.logoFileId)))[0];
+        if (old) {
+          const now = Date.now();
+          await tx.update(files).set({ removedAt: now, removedBy: actor.id, purgedAt: now }).where(eq(files.id, old.id));
+          replaced = old;
+        }
+      }
+      await tx.update(settings).set({ logoFileId: id }).where(eq(settings.id, 1));
+    }
   });
   const gone = replaced as { id: string; storageKey: string } | null;
-  if (gone) await deleteObject(gone.storageKey).catch((err: unknown) => console.error("Old model photo not deleted from R2:", err instanceof Error ? err.message : err));
+  if (gone) await deleteObject(gone.storageKey).catch((err: unknown) => console.error("Replaced photo not deleted from R2:", err instanceof Error ? err.message : err));
   return { id };
 }
 
@@ -146,6 +164,10 @@ export async function removeFile(actor: Actor, id: string) {
     }
     if (f.ownerType === "model" && f.kind === "photo") {
       await tx.update(equipmentModels).set({ photoFileId: null }).where(and(eq(equipmentModels.id, f.ownerId), eq(equipmentModels.photoFileId, id)));
+    }
+    if (f.ownerType === "hospital") {
+      if (!can(actor.role, "settings.edit")) throw forbidden();
+      await tx.update(settings).set({ logoFileId: null }).where(and(eq(settings.id, 1), eq(settings.logoFileId, id)));
     }
   });
   return { id };

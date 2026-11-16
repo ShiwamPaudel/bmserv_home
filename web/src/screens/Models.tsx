@@ -27,6 +27,7 @@ import {
   SheetForm,
   useToast,
 } from "../components/ui";
+import { SetupTabs } from "../components/SetupTabs";
 
 const pmsText = (m: Model) => (m.pmsEvery ? t.coverage.pmsLine(t.pmsEvery(m.pmsEvery, m.pmsUnit)) : null);
 
@@ -45,13 +46,14 @@ export function Models() {
 
   return (
     <>
-      <PageHead title={t.models.title}>
+      <PageHead title={t.nav.setup}>
         {canEdit && (
           <button className="btn primary" onClick={() => setAdding(true)}>
             {t.models.add}
           </button>
         )}
       </PageHead>
+      <SetupTabs />
       <div className="search-bar">
         <label htmlFor="model-q" className="visually-hidden">
           {t.models.searchLabel}

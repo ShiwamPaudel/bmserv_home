@@ -28,7 +28,7 @@ export function EquipmentList() {
   const search = new URLSearchParams({ q: dq, department, status, coverage, provider, limit: String(limit) });
   const list = useQuery({
     queryKey: qk.equipmentList(search.toString()),
-    queryFn: () => get<{ rows: EquipmentRow[]; total: number }>(`/equipment?${search}`),
+    queryFn: () => get<{ rows: EquipmentRow[]; total: number; today: string; coverageWarnDays: number }>(`/equipment?${search}`),
     placeholderData: (prev) => prev,
   });
   const depts = useQuery({ queryKey: qk.departments, queryFn: () => get<DepartmentListItem[]>("/departments") });
@@ -77,6 +77,10 @@ export function EquipmentList() {
           <select aria-label={t.equipment.filterCoverage} value={coverage} onChange={(e) => setFilter("coverage", e.target.value)}>
             <option value="">{t.equipment.coverageAny}</option>
             <option value="under">{t.equipment.coverageUnder}</option>
+            <option value="warranty">{t.equipment.coverageWarranty}</option>
+            <option value="amc">{t.equipment.coverageAmc}</option>
+            <option value="cmc">{t.equipment.coverageCmc}</option>
+            <option value="ending">{t.equipment.coverageEnding(list.data?.coverageWarnDays ?? 30)}</option>
             <option value="none">{t.equipment.coverageNone}</option>
           </select>
           <select aria-label={t.equipment.filterProvider} value={provider} onChange={(e) => setFilter("provider", e.target.value)}>
@@ -145,7 +149,7 @@ export function EquipmentList() {
                   }
                 />
               ) : (
-                <EquipmentLine key={e.id} e={e} />
+                <EquipmentLine key={e.id} e={e} coverage={{ today: list.data.today, warnDays: list.data.coverageWarnDays }} />
               ),
             )}
           </Rows>

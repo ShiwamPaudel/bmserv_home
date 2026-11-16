@@ -1,10 +1,14 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Building2, CalendarDays, ClipboardList, Mail, TriangleAlert } from "lucide-react";
+import { HOSPITAL_OWNER_ID } from "@bmserv/shared/enums";
 import { countryCodes } from "@bmserv/shared/phone";
 import { t } from "@bmserv/shared/terms";
-import { errorMessage, fieldErrors, get, patch } from "../lib/api";
+import { errorMessage, fieldErrors, get, patch, post } from "../lib/api";
+import { shrinkImage } from "../lib/image";
+import { uploadFile } from "../lib/upload";
+import { checkModelPhoto } from "../components/ModelFields";
 import { useCan, useMe, useOnline, useTitle } from "../lib/hooks";
 import { qk } from "../lib/queryKeys";
 import type { Person, Settings } from "../lib/types";
@@ -69,6 +73,77 @@ export function SettingsScreen() {
   );
 }
 
+/** The logo saves on its own (straight to R2), apart from the Save button of the form. */
+function HospitalLogoField({ logoFileId }: { logoFileId: string | null }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const toast = useToast();
+  const online = useOnline();
+
+  const refresh = async () => {
+    await qc.invalidateQueries({ queryKey: qk.settings });
+    await qc.invalidateQueries({ queryKey: qk.me });
+  };
+
+  async function choose(file: File | undefined) {
+    if (!file) return;
+    const problem = checkModelPhoto(file);
+    if (problem) return setErr(problem);
+    setErr(null);
+    setBusy(true);
+    try {
+      const small = await shrinkImage(file, 800, true);
+      await uploadFile(small, { ownerType: "hospital", ownerId: HOSPITAL_OWNER_ID, kind: "photo", title: t.settings.logo, note: null }, () => undefined);
+      await refresh();
+      toast(t.settings.logoSaved);
+    } catch (e) {
+      setErr(errorMessage(e));
+    } finally {
+      setBusy(false);
+      if (input.current) input.current.value = "";
+    }
+  }
+
+  async function remove() {
+    if (!logoFileId) return;
+    setBusy(true);
+    try {
+      await post(`/files/${logoFileId}/remove`);
+      await refresh();
+      toast(t.settings.logoRemoved);
+    } catch (e) {
+      setErr(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className={`field${err ? " has-error" : ""}`}>
+      <div className="labels-label">{t.settings.logo}</div>
+      <div className="logo-field">
+        <div className="logo-preview">
+          {logoFileId ? <img src={`/api/files/${logoFileId}/image`} alt={t.settings.logo} /> : <span className="muted secondary">{t.settings.noLogo}</span>}
+        </div>
+        <div className="logo-actions">
+          <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => void choose(e.target.files?.[0])} />
+          <button type="button" className="btn small" disabled={busy || !online} onClick={() => input.current?.click()}>
+            {busy ? t.settings.logoUploading : logoFileId ? t.settings.changeLogo : t.settings.chooseLogo}
+          </button>
+          {logoFileId && (
+            <button type="button" className="btn small danger" disabled={busy || !online} onClick={() => void remove()}>
+              {t.settings.removeLogo}
+            </button>
+          )}
+        </div>
+      </div>
+      {err ? <div className="error">{err}</div> : <div className="help">{t.settings.logoHelp}</div>}
+    </div>
+  );
+}
+
 function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
   const [f, setF] = useState<Settings>({ ...saved });
   const [errs, setErrs] = useState<Record<string, string>>({});
@@ -118,6 +193,7 @@ function TabForm({ tab, saved }: { tab: Tab; saved: Settings }) {
       {error && !Object.keys(errs).length && <Notice tone="bad">{error}</Notice>}
       {tab === "hospital" && (
         <>
+          <HospitalLogoField logoFileId={saved.logoFileId} />
           <TextField label={t.settings.hospitalName} value={f.hospitalName} onChange={(v) => set("hospitalName", v)} error={errs.hospitalName} />
           <TextField label={t.settings.hospitalAddress} value={f.hospitalAddress ?? ""} onChange={(v) => set("hospitalAddress", v)} error={errs.hospitalAddress} optional />
           <TextField label={t.settings.departmentName} value={f.departmentName} onChange={(v) => set("departmentName", v)} error={errs.departmentName} />

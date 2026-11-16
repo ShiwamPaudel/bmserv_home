@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { text } from "./common";
+import { adDate, text } from "./common";
+
+/** Reports: the date range (Nepal dates, AD). */
+export const reportRangeSchema = z.object({ from: adDate(), to: adDate() });
 
 /** A problem reported from a label (QR) by hospital staff or the team. */
 export const reportSchema = z.object({

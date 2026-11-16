@@ -3,8 +3,8 @@ import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate, useRouteErro
 import { useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
-  Boxes,
   Building2,
+  ChartColumn,
   CalendarCheck,
   ClipboardList,
   Home as HomeIcon,
@@ -14,9 +14,7 @@ import {
   ScanLine,
   Settings,
   User,
-  Users,
   Wrench,
-  Handshake,
 } from "lucide-react";
 import { registerSW } from "virtual:pwa-register";
 import { can } from "@bmserv/shared/permissions";
@@ -27,6 +25,8 @@ import { useMe, useOnline } from "../lib/hooks";
 import { clearCache } from "../lib/offlineCache";
 import { setDateMode } from "../lib/dates";
 import { iconProps, Loading } from "../components/ui";
+import { InstallPrompt } from "../components/InstallPrompt";
+import { setupPaths } from "../components/SetupTabs";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const me = useMe();
@@ -73,44 +73,14 @@ export function useSignOut() {
   };
 }
 
-type BeforeInstall = Event & { prompt: () => Promise<void> };
-
 function usePwa() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const [update, setUpdate] = useState<(() => Promise<void>) | null>(null);
-  const [install, setInstall] = useState<BeforeInstall | null>(null);
   useEffect(() => {
     const updateSW = registerSW({ onNeedRefresh: () => setNeedRefresh(true) });
     setUpdate(() => () => updateSW(true));
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      try {
-        if (localStorage.getItem("bmserv-install-dismissed")) return;
-      } catch {
-        /* ignore */
-      }
-      setInstall(e as BeforeInstall);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
-  return {
-    needRefresh,
-    reload: () => void update?.(),
-    install,
-    doInstall: async () => {
-      await install?.prompt();
-      setInstall(null);
-    },
-    dismissInstall: () => {
-      try {
-        localStorage.setItem("bmserv-install-dismissed", "1");
-      } catch {
-        /* ignore */
-      }
-      setInstall(null);
-    },
-  };
+  return { needRefresh, reload: () => void update?.() };
 }
 
 export function Layout() {
@@ -134,11 +104,8 @@ export function Layout() {
     { to: "/pms", label: t.nav.pms, icon: CalendarCheck },
   ];
   const secondary = [
-    { to: "/models", label: t.nav.models, icon: Boxes, show: true },
-    { to: "/manuals", label: t.nav.manuals, icon: BookOpen, show: true },
-    { to: "/departments", label: t.nav.departments, icon: Building2, show: true },
-    { to: "/service-providers", label: t.nav.serviceProviders, icon: Handshake, show: true },
-    { to: "/team", label: t.nav.team, icon: Users, show: can(role, "team.manageEngineers") },
+    { to: "/models", label: t.nav.setup, icon: Building2, show: true },
+    { to: "/reports", label: t.nav.reports, icon: ChartColumn, show: true },
     { to: "/settings", label: t.nav.settings, icon: Settings, show: can(role, "settings.edit") },
   ];
   const moreActive = [
@@ -148,6 +115,7 @@ export function Layout() {
     "/service-providers",
     "/team",
     "/settings",
+    "/reports",
     "/account",
     "/more",
   ].some((p) => loc.pathname.startsWith(p));
@@ -182,10 +150,6 @@ export function Layout() {
               {i.label}
             </NavLink>
           ))}
-          <NavLink to="/models">
-            <Boxes {...iconProps} />
-            {t.nav.models}
-          </NavLink>
           <NavLink to="/manuals">
             <BookOpen {...iconProps} />
             {t.nav.manuals}
@@ -196,9 +160,18 @@ export function Layout() {
           </NavLink>
           <div className="group-gap" />
           {secondary
-            .filter((i) => i.show && i.to !== "/manuals" && i.to !== "/models")
+            .filter((i) => i.show)
             .map((i) => (
-              <NavLink key={i.to} to={i.to}>
+              <NavLink
+                key={i.to}
+                to={i.to}
+                // Hospital setup stays highlighted on every one of its tabs and their pages.
+                className={({ isActive }) =>
+                  isActive || (i.to === "/models" && setupPaths.some((p) => loc.pathname.startsWith(p)))
+                    ? "active"
+                    : undefined
+                }
+              >
                 <i.icon {...iconProps} />
                 {i.label}
               </NavLink>
@@ -239,20 +212,8 @@ export function Layout() {
             </button>
           </div>
         )}
-        {pwa.install && (
-          <div className="notice ok">
-            <span>{t.pwa.install}</span>
-            <span className="notice-action" style={{ display: "flex", gap: 12 }}>
-              <button className="link-btn" onClick={() => void pwa.doInstall()}>
-                {t.pwa.installButton}
-              </button>
-              <button className="link-btn" onClick={pwa.dismissInstall}>
-                {t.pwa.later}
-              </button>
-            </span>
-          </div>
-        )}
       </div>
+      <InstallPrompt />
 
       <main id="main" className="main">
         <div className="page">
@@ -342,6 +303,7 @@ function StaffLayout() {
           </div>
         )}
       </div>
+      <InstallPrompt />
       <main id="main" className="main main-narrow">
         <div className="page">
           <Outlet />

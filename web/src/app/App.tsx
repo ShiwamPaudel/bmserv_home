@@ -23,6 +23,7 @@ import { BreakdownPage } from "../screens/breakdowns/BreakdownPage";
 import { AskProvider } from "../screens/breakdowns/AskProvider";
 import { ModelPage, Models } from "../screens/Models";
 import { MyReports, ReportStart, StaffEquipment } from "../screens/Report";
+import { ReportsScreen } from "../screens/Reports";
 
 const router = createBrowserRouter([
   { path: "/sign-in", element: <SignIn />, errorElement: <RouteError /> },
@@ -63,6 +64,7 @@ const router = createBrowserRouter([
           { path: "service-providers", element: <Providers /> },
           { path: "service-providers/:id", element: <ProviderPage /> },
           { path: "team", element: <Team /> },
+          { path: "reports", element: <ReportsScreen /> },
           { path: "settings", element: <SettingsScreen /> },
           { path: "more", element: <More /> },
           { path: "print/labels", element: <PrintLabels /> },

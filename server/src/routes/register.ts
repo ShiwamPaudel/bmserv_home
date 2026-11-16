@@ -3,16 +3,18 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { todayNepal } from "@bmserv/shared/dates";
 import { coverageEndSchema, coverageSchema, pmsDateSchema, pmsDoneSchema } from "@bmserv/shared/schemas/coverage";
-import { designateSchema, equipmentSchema, equipmentUpdateSchema, labelsPrintedSchema, moveSchema } from "@bmserv/shared/schemas/equipment";
+import { designateSchema, equipmentCreateSchema, equipmentUpdateSchema, labelsPrintedSchema, moveSchema } from "@bmserv/shared/schemas/equipment";
 import { uploadRequestSchema } from "@bmserv/shared/schemas/files";
 import { body, query, requireAction, type AppEnv } from "../lib/http";
-import { notFound } from "../lib/errors";
+import { badRequest, notFound } from "../lib/errors";
 import * as coverage from "../services/coverage";
 import * as equipment from "../services/equipment";
 import { exportList } from "../services/exportCsv";
 import * as files from "../services/files";
 import { equipmentHistory } from "../services/history";
 import { home } from "../services/home";
+import { buildReport } from "../services/reports";
+import { reportRangeSchema } from "@bmserv/shared/schemas/report";
 import { commitImport, previewImport } from "../services/importer";
 import * as moves from "../services/moves";
 import * as pms from "../services/pms";
@@ -36,7 +38,7 @@ register.get("/equipment", async (c) =>
   ),
 );
 register.post("/equipment", requireAction("equipment.edit"), async (c) =>
-  c.json(await equipment.createEquipment(c.get("actor"), await body(c, equipmentSchema)), 201),
+  c.json(await equipment.createEquipment(c.get("actor"), await body(c, equipmentCreateSchema)), 201),
 );
 register.get("/equipment/by-qr/:code", async (c) => c.json(await equipment.equipmentIdByQr(c.req.param("code"))));
 register.get("/equipment/labels", async (c) => {
@@ -101,7 +103,7 @@ register.post("/coverage/:id/end", requireAction("coverage.edit"), async (c) =>
 // ---- PMS ----
 register.get("/pms", async (c) => {
   const f = query(c, "filter");
-  const filter = f === "overdue" || f === "done" ? f : "due";
+  const filter = f === "overdue" || f === "done" || f === "soon" || f === "upcoming" ? f : "due";
   return c.json(await pms.listPms(filter, { providerId: query(c, "provider"), equipmentId: query(c, "equipment") }));
 });
 register.patch("/pms/:id", requireAction("pms.editDate"), async (c) =>
@@ -116,6 +118,11 @@ register.post("/pms/:id/remind", requireAction("pms.remind"), async (c) =>
 
 // ---- Home and export ----
 register.get("/home", async (c) => c.json(await home(c.get("actor"))));
+register.get("/reports", requireAction("view"), async (c) => {
+  const range = reportRangeSchema.safeParse({ from: query(c, "from"), to: query(c, "to") });
+  if (!range.success) throw badRequest("Choose a start and end date.", { from: "Choose a start and end date." });
+  return c.json(await buildReport(range.data.from, range.data.to));
+});
 register.get("/export/:file", async (c) => {
   const list = c.req.param("file").replace(/\.csv$/, "");
   const out = await exportList(c.get("actor"), list);

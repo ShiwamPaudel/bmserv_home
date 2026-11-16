@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `logo_file_id` text;

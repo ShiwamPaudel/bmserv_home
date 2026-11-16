@@ -45,6 +45,8 @@ export const settings = sqliteTable("settings", {
   pushOnBreakdown: bool("push_on_breakdown").notNull().default(true),
   pushOnFixed: bool("push_on_fixed").notNull().default(true),
   whatsappButtons: bool("whatsapp_buttons").notNull().default(true),
+  /** Hospital logo: files row with owner_type hospital, kind photo. */
+  logoFileId: text("logo_file_id"),
   updatedAt: integer("updated_at").notNull().default(nowMs),
 });
 

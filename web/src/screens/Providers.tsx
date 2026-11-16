@@ -29,6 +29,7 @@ import {
   useToast,
   WhatsAppButton,
 } from "../components/ui";
+import { SetupTabs } from "../components/SetupTabs";
 
 export function Providers() {
   useTitle(t.providers.title);
@@ -40,13 +41,14 @@ export function Providers() {
   const [adding, setAdding] = useState(false);
   return (
     <>
-      <PageHead title={t.providers.title}>
+      <PageHead title={t.nav.setup}>
         {canEdit && (
           <button className="btn primary" onClick={() => setAdding(true)}>
             {t.providers.add}
           </button>
         )}
       </PageHead>
+      <SetupTabs />
       {q.isLoading ? (
         <Loading />
       ) : q.error ? (

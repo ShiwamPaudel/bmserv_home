@@ -34,6 +34,7 @@ core.get("/me", async (c) => {
       departmentPhone: s.departmentPhone,
       dateDisplay: s.dateDisplay,
       countryCode: s.countryCode,
+      logoFileId: s.logoFileId,
       whatsappButtons: s.whatsappButtons,
       staffReports: s.staffReports,
     },

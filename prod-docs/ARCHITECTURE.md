@@ -39,6 +39,7 @@ Turso        Cloudflare R2   Resend        Vercel Cron, daily 02:15 UTC (08:00 N
 | Validation | Zod, shared | |
 | Nepali dates | `nepali-date-converter` (BS 2000–2090), wrapped in `shared/src/dates.ts` | |
 | QR | `qrcode` (SVG) | in the browser |
+| PowerPoint | `pptxgenjs` 4.0.1 | in the browser, loaded only when a report is downloaded |
 | Scanning | browser camera + `jsqr` | |
 | Tests | Vitest | in-memory libSQL |
 | Build | `esbuild` (server bundle), `tsx` (scripts, dev), `concurrently` (dev) | |
@@ -97,7 +98,7 @@ npm workspaces: `shared`, `server`, `web`.
 
 Conventions: text ids (nanoid). Date-only = text `YYYY-MM-DD` (AD). Moments = integer UTC ms. Booleans 0/1. Nothing a person recorded is hard-deleted; use `is_active`, `removed_at` or a status. **All tables are created in Phase 1**, so later phases add code, not structure, unless a change is needed.
 
-**settings** (one row, id 1): `hospital_name, hospital_address, department_name, department_email, department_phone, daily_email_time ('08:00'), pms_reminder_days (3), email_cc (JSON), date_display (bs|ad, default bs), country_code ('+977'), email_team_on_report (1), pms_soon_days (7), coverage_warn_days (30), paused_warn_days (14), staff_reports (1), staff_report_assignee_id (null = first active Lead, then Admin), push_on_breakdown (1), push_on_fixed (1), whatsapp_buttons (1), updated_at`
+**settings** (one row, id 1): `hospital_name, hospital_address, department_name, department_email, department_phone, daily_email_time ('08:00'), pms_reminder_days (3), email_cc (JSON), date_display (bs|ad, default bs), country_code ('+977'), email_team_on_report (1), pms_soon_days (7), coverage_warn_days (30), paused_warn_days (14), staff_reports (1), staff_report_assignee_id (null = first active Lead, then Admin), push_on_breakdown (1), push_on_fixed (1), whatsapp_buttons (1), logo_file_id (files row, owner_type hospital), updated_at`
 
 **user, session, account, verification** — Better Auth (generate with its CLI). Extra `user` columns: `username, display_username, role (admin|lead|engineer|staff), phone, banned, ban_reason, ban_expires, must_change_password`. Plus **rate_limit** (`id, key, count, last_request`) for sign-in limits.
 
@@ -129,7 +130,7 @@ Conventions: text ids (nanoid). Date-only = text `YYYY-MM-DD` (AD). Moments = in
 
 **moves**: `id, equipment_id, from_department_id, to_department_id, type (temporary|permanent), reason, moved_at, moved_by, expected_return_on, returned_at, returned_by`
 
-**files**: `id, owner_type (model|equipment|coverage|pms_visit|breakdown), owner_id, kind (service_manual|operation_manual|other_manual|installation_report|service_report|contract|photo|other), title, note, storage_key, file_name, mime_type, size_bytes, status (pending|ready), uploaded_by, created_at, removed_at, removed_by, purged_at`
+**files**: `id, owner_type (model|equipment|coverage|pms_visit|breakdown|hospital; hospital = the logo, owner_id "1"), owner_id, kind (service_manual|operation_manual|other_manual|installation_report|service_report|contract|photo|other), title, note, storage_key, file_name, mime_type, size_bytes, status (pending|ready), uploaded_by, created_at, removed_at, removed_by, purged_at`
 
 **email_log**: `id, kind (breakdown_request|breakdown_daily|breakdown_closed|breakdown_reported|pms_reminder|test), dedupe_key (unique), to_addresses, cc_addresses, subject, body_text, resend_id, status (sending|sent|failed), error, related_type, related_id, provider_id, created_by (null = automatic), created_at`
 
@@ -139,7 +140,7 @@ Conventions: text ids (nanoid). Date-only = text `YYYY-MM-DD` (AD). Moments = in
 
 **push_subscriptions** (one row per browser with notifications on; machine data, deleted when the push service answers 404/410): `id, user_id, endpoint (unique), p256dh, auth, user_agent, created_at, last_sent_at`
 
-Migrations: `0000_init`, `0001_date_display`, `0002_staff_push_pms_units` (settings columns, model and coverage PMS units, push_subscriptions; copies `pms_every_months` into `pms_every`), `0003_model_photo`, `0004_staff_departments`.
+Migrations: `0000_init`, `0001_date_display`, `0002_staff_push_pms_units` (settings columns, model and coverage PMS units, push_subscriptions; copies `pms_every_months` into `pms_every`), `0003_model_photo`, `0004_staff_departments`, `0005_hospital_logo`.
 
 ### Rules that live in services
 
@@ -182,6 +183,7 @@ REST + JSON under `/api`. Session required except `/api/auth/*`, `/api/jobs/*` a
 | PMS | `GET /api/pms`, `PATCH /api/pms/:id`, `POST /api/pms/:id/done`, `POST /api/pms/:id/remind` |
 | Breakdowns | `GET/POST /api/breakdowns`, `GET /api/breakdowns/:id`, `POST /:id/notes`, `GET /:id/recipients/default`, `POST /:id/ask-provider`, `PUT /:id/recipients`, `POST /:id/send-now`, `POST /:id/pause`, `POST /:id/resume`, `POST /:id/close`, `PATCH /:id/assign` (all under `/api/breakdowns`) |
 | Home | `GET /api/home` (attention lists + `stats` for the overview charts) |
+| Reports | `GET /api/reports?from=&to=` (team; `services/reports.ts` computes everything for the period; at most 3 years) |
 | Export | `GET /api/export/:list.csv` |
 | Jobs | `GET` or `POST /api/jobs/tick` with `Authorization: Bearer JOB_SECRET` (or `CRON_SECRET` from Vercel Cron) |
 
@@ -224,7 +226,11 @@ Each tick:
 
 ## 10. Web app
 
-- Routes: `/sign-in`, `/` (Home; Report a problem for hospital staff), `/my-reports`, `/my-equipment` (staff), `/models`, `/models/:id`, `/equipment`, `/equipment/new`, `/equipment/import`, `/equipment/:id`, `/equipment/:id/edit`, `/e/:qrCode`, `/scan`, `/breakdowns`, `/breakdowns/new`, `/breakdowns/:id`, `/breakdowns/:id/ask`, `/pms`, `/manuals`, `/departments`, `/departments/:id`, `/service-providers`, `/service-providers/:id`, `/team`, `/settings`, `/account`, `/more`, `/print/labels`.
+- Routes: `/sign-in`, `/` (Home; Report a problem for hospital staff), `/my-reports`, `/my-equipment` (staff), `/models`, `/models/:id`, `/equipment`, `/equipment/new`, `/equipment/import`, `/equipment/:id`, `/equipment/:id/edit`, `/e/:qrCode`, `/scan`, `/breakdowns`, `/breakdowns/new`, `/breakdowns/:id`, `/breakdowns/:id/ask`, `/pms`, `/manuals`, `/departments`, `/departments/:id`, `/service-providers`, `/service-providers/:id`, `/team`, `/reports`, `/settings`, `/account`, `/more`, `/print/labels` (inside the app layout).
+- Hospital setup: `/models`, `/departments`, `/service-providers`, `/team` share `SetupTabs`; the sidebar shows one "Hospital setup" item.
+- Reports: `screens/Reports.tsx`, ranges in `lib/reportRange.ts`, highlights in `lib/reportInsights.ts`, PowerPoint in `lib/reportPptx.ts` (dynamic import); PDF = `window.print()` with the report print stylesheet.
+- Install popup: `lib/install.ts` catches `beforeinstallprompt` at start (`main.tsx`), `components/InstallPrompt.tsx` shows it on phones after sign-in.
+- Equipment rows carry `coverageType` and `coverageLastDay` (current coverage, SQL subqueries using Nepal today); `GET /api/equipment?coverage=` takes under|warranty|amc|cmc|ending|none. `POST /api/equipment` takes an optional `warranty` and inserts it with its PMS in the same transaction. `GET /api/pms?filter=` takes soon|upcoming|overdue|done (due = all from today, used by Home and the CSV).
 - TanStack Query for server data; one query-key file; invalidate after changes.
 - All words from `shared/terms.ts`.
 - QR content: `{APP_URL}/e/{qr_code}`.
@@ -298,6 +304,6 @@ New Turso database, new R2 bucket (+ CORS), new Vercel project with its own envi
 ## 13. Tests
 
 - `shared`: PMS schedule (days, months, years), permissions (incl. hospital staff), dates, serial key, model key, phone and WhatsApp links.
-- `server/src/test/staff.test.ts`: list counts, provider required contacts, staff gate, report flow (note on an open breakdown), push and team email, notify on fix, settings by tab.
+- `server/src/test/staff.test.ts`: list counts, provider required contacts, staff gate, report flow (note on an open breakdown, My reports, notify on fix), staff departments, push and team email, new equipment warranty and coverage filters, hospital logo rules, reports, settings by tab.
 - `server` (in-memory libSQL): status changes, coverage overlap, recipients default, daily email due rule (pause, resume date, 12-hour gap, once per day), PMS reminder selection and grouping, role refusals, file type and size limits.
 - `web`: label sheet positions.

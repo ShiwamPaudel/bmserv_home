@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, lte, ne, sql } from "drizzle-orm";
 import { addDays, formatDate, nepalTime, todayNepal } from "@bmserv/shared/dates";
 import { coverageLastDay } from "@bmserv/shared/pms";
 import { t } from "@bmserv/shared/terms";
@@ -47,8 +47,15 @@ async function attachEquipment<T extends { equipmentId: string }>(conn: Conn, vi
     .map((v) => ({ ...v, equipment: byId.get(v.equipmentId) as EquipmentRow }));
 }
 
-/** PMS list: due (upcoming), overdue or done. Only under current coverage, not out of service. */
-export async function listPms(filter: "due" | "overdue" | "done", opts: { providerId?: string | undefined; equipmentId?: string | undefined } = {}) {
+export type PmsFilter = "due" | "soon" | "upcoming" | "overdue" | "done";
+/** How far ahead "Upcoming" looks. */
+const UPCOMING_DAYS = 365;
+
+/**
+ * PMS list. due: every scheduled visit from today; soon: within the "PMS due soon" window (Settings);
+ * upcoming: after that window, up to a year ahead; overdue; done. Only under current coverage, not out of service.
+ */
+export async function listPms(filter: PmsFilter, opts: { providerId?: string | undefined; equipmentId?: string | undefined } = {}) {
   const db = getDb();
   const today = todayNepal();
   const base = db
@@ -61,6 +68,15 @@ export async function listPms(filter: "due" | "overdue" | "done", opts: { provid
     opts.providerId ? eq(equipment.serviceProviderId, opts.providerId) : undefined,
     opts.equipmentId ? eq(pmsVisits.equipmentId, opts.equipmentId) : undefined,
   );
+  const soonEnd = addDays(today, (await getSettings()).pmsSoonDays);
+  const window =
+    filter === "due"
+      ? gte(pmsVisits.dueOn, today)
+      : filter === "soon"
+        ? and(gte(pmsVisits.dueOn, today), lte(pmsVisits.dueOn, soonEnd))
+        : filter === "upcoming"
+          ? and(gt(pmsVisits.dueOn, soonEnd), lte(pmsVisits.dueOn, addDays(today, UPCOMING_DAYS)))
+          : lt(pmsVisits.dueOn, today);
   let rows;
   if (filter === "done") {
     rows = await base.where(and(eq(pmsVisits.status, "done"), scoped)).orderBy(desc(pmsVisits.doneOn)).limit(200);
@@ -71,12 +87,12 @@ export async function listPms(filter: "due" | "overdue" | "done", opts: { provid
           eq(pmsVisits.status, "scheduled"),
           ne(equipment.status, "out_of_service"),
           coverageCurrentOn(today),
-          filter === "due" ? gte(pmsVisits.dueOn, today) : lt(pmsVisits.dueOn, today),
+          window,
           scoped,
         ),
       )
       .orderBy(asc(pmsVisits.dueOn))
-      .limit(300);
+      .limit(filter === "upcoming" ? 600 : 300);
   }
   return attachEquipment(db, rows);
 }

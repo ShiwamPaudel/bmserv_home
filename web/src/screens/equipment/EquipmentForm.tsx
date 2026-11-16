@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
+import { addDays, addMonths } from "@bmserv/shared/dates";
+import type { PmsUnit } from "@bmserv/shared/enums";
 import { t } from "@bmserv/shared/terms";
 import { ApiError, errorMessage, fieldErrors, get, patch, post } from "../../lib/api";
 import { useCan, useDebounced, useOnline, useSave, useTitle } from "../../lib/hooks";
@@ -22,6 +24,7 @@ import {
 } from "../../components/ModelFields";
 import { ModelThumb } from "../../components/ModelPhoto";
 import { DateField } from "../../components/DateField";
+import { DateText } from "../../lib/dates";
 import {
   Checkbox,
   LoadError,
@@ -33,6 +36,16 @@ import {
   TextField,
   useToast,
 } from "../../components/ui";
+
+type WarrantyLength = "6" | "12" | "24" | "36" | "60" | "other";
+type Warranty = { on: boolean; startsOn: string | null; length: WarrantyLength; endsOn: string | null };
+
+/** The warranty's last day: start + length − 1 day (a 1-year warranty from 1 Oct ends 30 Sep). */
+function warrantyEnd(w: Warranty, start: string | null): string | null {
+  if (!start) return null;
+  if (w.length === "other") return w.endsOn;
+  return addDays(addMonths(start, Number(w.length)), -1);
+}
 
 type Form = {
   modelId: string;
@@ -79,6 +92,14 @@ export function EquipmentForm() {
     lastPmsDoneOn: null,
   });
   const [modelLabel, setModelLabel] = useState("");
+  // New equipment: 1 year of warranty from installation by default; the person may change or remove it.
+  const [w, setW] = useState<Warranty>({ on: true, startsOn: null, length: "12", endsOn: null });
+  const [modelPms, setModelPms] = useState<{ every: number | null; unit: PmsUnit }>({
+    every: null,
+    unit: "months",
+  });
+  const warrantyStart = w.startsOn ?? f.installedOn;
+  const warrantyEndsOn = warrantyEnd(w, warrantyStart);
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [duplicateId, setDuplicateId] = useState<string | null>(null);
@@ -112,7 +133,16 @@ export function EquipmentForm() {
       const { serviceEngineerIds: _s, lastPmsDoneOn: _l, ...rest } = body;
       return patch<{ id: string }>(`/equipment/${id}`, rest);
     }
-    return post<{ id: string }>("/equipment", body);
+    const warranty =
+      w.on && warrantyStart && warrantyEndsOn
+        ? {
+            startsOn: warrantyStart,
+            endsOn: warrantyEndsOn,
+            pmsEvery: modelPms.every,
+            pmsUnit: modelPms.unit,
+          }
+        : null;
+    return post<{ id: string }>("/equipment", { ...body, warranty });
   });
 
   if (!canEdit) return <Notice tone="off">{t.app.noAccess}</Notice>;
@@ -124,6 +154,8 @@ export function EquipmentForm() {
     const local: Record<string, string> = {};
     if (!f.modelId) local.modelId = t.fields.choose;
     if (!f.installedOn) local.installedOn = t.fields.date;
+    if (!editing && w.on && !warrantyStart) local["warranty.startsOn"] = t.equipment.warrantyNeedsStart;
+    if (!editing && w.on && w.length === "other" && !w.endsOn) local["warranty.endsOn"] = t.fields.date;
     if (Object.keys(local).length) {
       setErrs(local);
       return;
@@ -164,6 +196,7 @@ export function EquipmentForm() {
           onChange={(m) => {
             setF({ ...f, modelId: m.id });
             setModelLabel(`${m.typeName}, ${m.manufacturer} ${m.model}`);
+            setModelPms({ every: m.pmsEvery, unit: m.pmsUnit });
           }}
         />
         <TextField
@@ -245,6 +278,64 @@ export function EquipmentForm() {
           </div>
         )}
         {!editing && (
+          <fieldset className="field warranty-box">
+            <legend>{t.equipment.warrantyTitle}</legend>
+            <Checkbox checked={w.on} onChange={(on) => setW({ ...w, on })}>
+              {t.equipment.warrantyOn}
+              <span className="help" style={{ display: "block" }}>
+                {t.equipment.warrantyOnHelp}
+              </span>
+            </Checkbox>
+            {w.on && (
+              <div className="warranty-fields">
+                <DateField
+                  label={t.equipment.warrantyStarts}
+                  value={warrantyStart}
+                  onChange={(v) => setW({ ...w, startsOn: v })}
+                  error={errs["warranty.startsOn"]}
+                  help={t.equipment.warrantyStartsHelp}
+                />
+                <SelectField
+                  label={t.equipment.warrantyLength}
+                  value={w.length}
+                  onChange={(v) => setW({ ...w, length: v as WarrantyLength })}
+                  options={(Object.keys(t.equipment.warrantyLengths) as WarrantyLength[]).map((k) => ({
+                    value: k,
+                    label: t.equipment.warrantyLengths[k],
+                  }))}
+                />
+                {w.length === "other" && (
+                  <DateField
+                    label={t.equipment.warrantyEnds}
+                    value={w.endsOn}
+                    onChange={(v) => setW({ ...w, endsOn: v })}
+                    error={errs["warranty.endsOn"]}
+                    yearsAhead={15}
+                  />
+                )}
+                {w.length !== "other" && errs["warranty.endsOn"] && (
+                  <div className="error">{errs["warranty.endsOn"]}</div>
+                )}
+                {warrantyEndsOn && (
+                  <p className="warranty-summary">
+                    {t.equipment.warrantyUntil}{" "}
+                    <strong>
+                      <DateText ad={warrantyEndsOn} />
+                    </strong>
+                    {f.modelId && (
+                      <span className="muted secondary" style={{ display: "block" }}>
+                        {modelPms.every
+                          ? t.equipment.warrantyPmsFromModel(t.pmsEvery(modelPms.every, modelPms.unit))
+                          : t.equipment.warrantyNoPms}
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+          </fieldset>
+        )}
+        {!editing && (
           <DateField
             label={t.equipment.lastPmsDone}
             value={f.lastPmsDoneOn}
@@ -271,7 +362,12 @@ export function EquipmentForm() {
   );
 }
 
-/** Choose a model, or add one inline (unique by manufacturer + model). */
+/** Shortest search that lists models; nothing is listed before it. */
+const MODEL_SEARCH_MIN = 2;
+/** At most this many matches show; typing more narrows them. */
+const MODEL_MATCHES_SHOWN = 8;
+
+/** Search a model, choose it from the matches, or add one inline (unique by manufacturer + model). */
 function ModelPicker({
   value,
   label,
@@ -289,11 +385,14 @@ function ModelPicker({
   const [m, setM] = useState<ModelDraft>(modelDraft());
   const [photo, setPhoto] = useState<File | null>(null);
   const [errs, setErrs] = useState<Record<string, string>>({});
+  const searching = dq.length >= MODEL_SEARCH_MIN;
   const list = useQuery({
     queryKey: qk.models(dq),
     queryFn: () => get<Model[]>(`/models?q=${encodeURIComponent(dq)}`),
-    enabled: !value || !!q,
+    enabled: searching,
   });
+  const matches = searching ? (list.data ?? []) : [];
+  const shown = matches.slice(0, MODEL_MATCHES_SHOWN);
   const create = useSave(async () => {
     const created = await post<Model>("/models", modelBody(m));
     // The model is saved either way; a failed photo can be added later on the Models screen.
@@ -361,31 +460,42 @@ function ModelPicker({
         onChange={(e) => setQ(e.target.value)}
         placeholder={t.models.searchHelp}
         autoComplete="off"
+        autoFocus={!!value}
       />
-      {error && <div className="error">{error}</div>}
-      <ul className="rows" style={{ marginTop: 8 }}>
-        {list.data?.map((x) => (
-          <li className="row" key={x.id}>
-            <button
-              type="button"
-              className="row-link"
-              onClick={() => {
-                onChange(x);
-                setQ("");
-              }}
-            >
-              <ModelThumb fileId={x.photoFileId} name={`${x.manufacturer} ${x.model}`} size={40} />
-              <div className="row-main">
-                <div className="row-title" style={{ fontSize: "var(--fs-body)" }}>
-                  {x.manufacturer} {x.model}
+      {error ? (
+        <div className="error">{error}</div>
+      ) : (
+        !searching && <div className="help">{t.models.typeToSearch}</div>
+      )}
+      {searching && list.isFetching && !list.data && <div className="help">{t.app.loading}</div>}
+      {searching && list.data && (
+        <ul className="rows" style={{ marginTop: 8 }}>
+          {shown.map((x) => (
+            <li className="row" key={x.id}>
+              <button
+                type="button"
+                className="row-link"
+                onClick={() => {
+                  onChange(x);
+                  setQ("");
+                }}
+              >
+                <ModelThumb fileId={x.photoFileId} name={`${x.manufacturer} ${x.model}`} size={40} />
+                <div className="row-main">
+                  <div className="row-title" style={{ fontSize: "var(--fs-body)" }}>
+                    {x.manufacturer} {x.model}
+                  </div>
+                  <div className="row-line">{x.typeName}</div>
                 </div>
-                <div className="row-line">{x.typeName}</div>
-              </div>
-            </button>
-          </li>
-        ))}
-        {list.data && !list.data.length && <li className="empty">{t.models.noMatch}</li>}
-      </ul>
+              </button>
+            </li>
+          ))}
+          {!list.data.length && <li className="empty">{t.models.noMatch}</li>}
+        </ul>
+      )}
+      {matches.length > MODEL_MATCHES_SHOWN && (
+        <div className="help">{t.models.moreMatches(matches.length - MODEL_MATCHES_SHOWN)}</div>
+      )}
       <button type="button" className="btn plain" onClick={() => setAdding(true)} style={{ marginTop: 4 }}>
         {t.models.addNew}
       </button>

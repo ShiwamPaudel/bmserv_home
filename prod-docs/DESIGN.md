@@ -92,8 +92,9 @@ Phone:
 ```
 
 - Bottom bar: Home, Equipment, Breakdowns, PMS, More. Active item: teal bar above its label.
-- More: Models, Manuals, Departments, Service providers, Team, Settings, My account, Sign out.
-- Desktop (≥ 960 px): same items in a navy left sidebar, Models and Manuals listed with the main items. Pages use the full width beside the sidebar up to 1440 px (`--w-page`); forms stay 560 px wide.
+- More: Manuals, Hospital setup, Reports, Settings, My account, Sign out.
+- Desktop (≥ 960 px): navy left sidebar: Home, Equipment, Breakdowns, PMS, Manuals, Scan; then Hospital setup, Reports, Settings.
+- **Hospital setup**: one item; its screens (Models, Departments, Service providers, Team for Admin and Lead) have "Hospital setup" as the title with that screen's add button, and tab links under it (same look as other tabs: teal underline on the current one). Pages use the full width beside the sidebar up to 1440 px (`--w-page`); forms stay 560 px wide.
 - **Hospital staff** see only: Report a problem, Equipment (their departments), My reports, My account (bottom bar on phone, sidebar on desktop; content width 880 px).
 - **Scan** always in the top bar; opens the camera to read a BMServ label.
 - Add/edit: full screen on phone, side sheet on desktop.
@@ -156,6 +157,13 @@ Phone:
 - **File row** (manuals, documents): a 44 px teal-wash square with a file icon (PDF or image) at the start; title; kind (and model link on Manuals); "PDF, 37 KB" and the added date. Outlined buttons with icons on the right: Open, Download, and Remove (red outline) where allowed; on phones (< 720 px) they sit under the text. The row itself is not a link.
 - **Section header actions** ("Upload manual", "Add coverage", "Print service history"): small outlined navy buttons, never bare text.
 - **Buttons** have a hover state (light grey fill; primary slightly lighter; danger red wash) and move down 1 px when pressed.
+- **Install popup** (phones and tablets, after sign-in): centred white card on a dimmed page, 400 px wide; app icon 64 px, "Install BMServ", hospital and department; one line; three points with teal-wash round icons; full-width "Install app" and "Not now". iPhone: numbered steps (Share, Add to Home Screen, Add) and "Got it". Close button top right; Escape closes.
+- **Chips** (Reports period): pill buttons, white with a grey border; the chosen one navy.
+- **Reports screen**: title with "Download PDF" (outlined) and "Download PowerPoint" (primary); period chips; the report: navy cover (logo on a white tile, hospital name, "Biomedical Department report", period, prepared date), then sections with a teal underline: Key figures (stat tiles, 4 across on wide screens), Highlights (bullets), Breakdowns (paired monthly columns navy + teal, ranked bars, small tables), Service providers (table), PMS, Warranty and contracts, Equipment, Other activity. Print: A4, no app frame, sections never split.
+- **Add equipment, Warranty box**: bordered box "Warranty" with "Under warranty" ticked; start date and length side by side; a teal-wash line "Warranty until 30 Sep 2027" with the PMS frequency from the model.
+- **Coverage line** on equipment list rows: "Warranty until …" in ink, amber when ending soon, "Not covered" muted.
+- **Hospital logo field** (Settings, Hospital): 160 × 96 dashed preview, "Choose logo" / "Change logo", "Remove logo"; saves at once.
+- **Month heading in a list** (PMS Upcoming): small navy bold text above that month's rows.
 - **Switch**: label and help on the left, a 48 × 28 px pill switch on the right (navy when on); for on/off settings.
 - **WhatsApp button**: secondary button with a message icon and the word WhatsApp, in WhatsApp green (`--whatsapp`) on white; opens wa.me in a new tab. Hidden when Settings turn WhatsApp buttons off.
 - **Card** (My account, Home charts): white, 1 px border, 10 px corners, no shadow.

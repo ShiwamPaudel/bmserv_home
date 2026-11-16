@@ -34,7 +34,9 @@ export type PauseReason = (typeof pauseReasons)[number];
 export const moveTypes = ["temporary", "permanent"] as const;
 export type MoveType = (typeof moveTypes)[number];
 
-export const fileOwnerTypes = ["model", "equipment", "coverage", "pms_visit", "breakdown"] as const;
+/** "hospital": the hospital logo (owner id "1", the settings row). */
+export const fileOwnerTypes = ["model", "equipment", "coverage", "pms_visit", "breakdown", "hospital"] as const;
+export const HOSPITAL_OWNER_ID = "1";
 export type FileOwnerType = (typeof fileOwnerTypes)[number];
 
 export const manualKinds = ["service_manual", "operation_manual", "other_manual"] as const;

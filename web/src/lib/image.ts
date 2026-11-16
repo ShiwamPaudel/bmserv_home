@@ -3,7 +3,8 @@
 
 const MAX_SIDE = 1280;
 
-export async function shrinkImage(file: File, maxSide = MAX_SIDE): Promise<File> {
+/** `keepTransparency`: logos stay PNG with a clear background instead of a white JPEG. */
+export async function shrinkImage(file: File, maxSide = MAX_SIDE, keepTransparency = false): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   let bitmap: ImageBitmap;
   try {
@@ -24,12 +25,15 @@ export async function shrinkImage(file: File, maxSide = MAX_SIDE): Promise<File>
     bitmap.close();
     return file;
   }
-  ctx.fillStyle = "#ffffff"; // transparent PNGs get a white background, not black
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!keepTransparency) {
+    ctx.fillStyle = "#ffffff"; // transparent PNGs get a white background, not black
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+  const type = keepTransparency ? "image/png" : "image/jpeg";
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.85));
   if (!blob || blob.size >= file.size) return file;
-  const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-  return new File([blob], name, { type: "image/jpeg" });
+  const name = file.name.replace(/\.[^.]+$/, "") + (keepTransparency ? ".png" : ".jpg");
+  return new File([blob], name, { type });
 }

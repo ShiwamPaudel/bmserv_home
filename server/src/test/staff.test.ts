@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { addDays, todayNepal } from "@bmserv/shared/dates";
 import { basicEquipment, setupTest, type TestCtx } from "./setup";
 
 type Any = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- loose JSON in tests
@@ -191,6 +192,32 @@ describe("model photo", () => {
   });
 });
 
+describe("hospital logo", () => {
+  const logo = (over: Record<string, unknown> = {}) => ({
+    ownerType: "hospital",
+    ownerId: "1",
+    kind: "photo",
+    title: "Hospital logo",
+    note: null,
+    fileName: "logo.png",
+    mimeType: "image/png",
+    sizeBytes: 40_000,
+    ...over,
+  });
+
+  it("only Admin sets it, only as an image of this hospital; /me and settings carry it", async () => {
+    expect((await ctx.lead.call("POST", "/files/upload", logo())).status).toBe(403);
+    expect((await ctx.admin.call("POST", "/files/upload", logo({ mimeType: "application/pdf", fileName: "x.pdf" }))).status).toBe(400);
+    expect((await ctx.admin.call("POST", "/files/upload", logo({ ownerId: "2" }))).status).toBe(404);
+    expect((await ctx.admin.call("POST", "/files/upload", logo({ kind: "contract" }))).status).toBe(400);
+    const ok = await ctx.admin.call<Any>("POST", "/files/upload", logo());
+    expect(ok.status).toBe(201);
+    expect(ok.json.uploadUrl).toContain("hospital/1/");
+    expect((await ctx.admin.call<Any>("GET", "/settings")).json).toHaveProperty("logoFileId", null);
+    expect((await ctx.staff.call<Any>("GET", "/me")).json.hospital).toHaveProperty("logoFileId", null);
+  });
+});
+
 describe("model page", () => {
   it("one model: its manuals (stored once) and every equipment of that model", async () => {
     const r = await ctx.engineer.call<Any>("GET", `/models/${base.modelId}`);
@@ -227,6 +254,84 @@ describe("staff departments", () => {
     expect(eng.json.departmentIds).toEqual([]);
     const team = await ctx.admin.call<Any[]>("GET", "/team");
     expect(team.json.find((p) => p.id === ctx.staff.id)?.departmentIds).toEqual([base.department2Id]);
+  });
+});
+
+describe("new equipment with its warranty", () => {
+  const body = (serial: string, warranty: unknown) => ({
+    modelId: base.modelId,
+    serialNumber: serial,
+    hospitalTag: null,
+    serviceProviderId: base.providerId,
+    homeDepartmentId: base.departmentId,
+    installedOn: addDays(todayNepal(), -30),
+    notes: null,
+    serviceEngineerIds: [],
+    lastPmsDoneOn: null,
+    warranty,
+  });
+
+  it("adds the warranty and its PMS in the same save; none when removed; checks the dates", async () => {
+    const today = todayNepal();
+    const start = addDays(today, -30);
+    const end = addDays(start, 364);
+    const r = await ctx.lead.call<Any>("POST", "/equipment", body("WAR-001", { startsOn: start, endsOn: end, pmsEvery: 6, pmsUnit: "months" }));
+    expect(r.status).toBe(201);
+    const d = await ctx.lead.call<Any>("GET", `/equipment/${r.json.id}`);
+    expect(d.json.coverage.current).toMatchObject({ type: "warranty", startsOn: start, endsOn: end, serviceProviderId: base.providerId });
+    expect(d.json.nextPms).not.toBeNull();
+
+    const none = await ctx.lead.call<Any>("POST", "/equipment", body("WAR-002", null));
+    expect((await ctx.lead.call<Any>("GET", `/equipment/${none.json.id}`)).json.coverage.current).toBeNull();
+
+    const bad = await ctx.lead.call<Any>("POST", "/equipment", body("WAR-003", { startsOn: start, endsOn: addDays(start, -10), pmsEvery: null }));
+    expect(bad.status).toBe(400);
+    expect(bad.json.error.fields).toHaveProperty(["warranty.endsOn"]);
+
+    // A warranty ending in 10 days counts as ending soon.
+    const short = await ctx.lead.call<Any>("POST", "/equipment", body("WAR-004", { startsOn: start, endsOn: addDays(today, 10), pmsEvery: null }));
+
+    // Coverage on every list row, and the list filters.
+    const ids = async (coverage: string) =>
+      (await ctx.engineer.call<Any>("GET", `/equipment?coverage=${coverage}`)).json.rows.map((e: Any) => e.id) as string[];
+    const rows = (await ctx.engineer.call<Any>("GET", "/equipment")).json.rows as Any[];
+    expect(rows.find((e) => e.id === r.json.id)).toMatchObject({ coverageType: "warranty", coverageLastDay: end });
+    expect(rows.find((e) => e.id === none.json.id)).toMatchObject({ coverageType: null, coverageLastDay: null });
+    expect(await ids("warranty")).toEqual(expect.arrayContaining([r.json.id, short.json.id]));
+    expect(await ids("warranty")).not.toContain(none.json.id);
+    expect(await ids("amc")).not.toContain(r.json.id);
+    expect(await ids("none")).toContain(none.json.id);
+    expect(await ids("ending")).toEqual([short.json.id]);
+  });
+});
+
+describe("reports", () => {
+  it("sums up a date range for the team; refused for hospital staff and bad ranges", async () => {
+    const today = todayNepal();
+    const r = await ctx.engineer.call<Any>("GET", `/reports?from=${addDays(today, -29)}&to=${today}`);
+    expect(r.status).toBe(200);
+    const d = r.json;
+    expect(d.period).toMatchObject({ days: 30, running: true });
+    // Earlier tests: a staff report fixed by an engineer, and a team breakdown the staff added to, fixed by the lead.
+    expect(d.breakdowns.reported).toBeGreaterThanOrEqual(2);
+    expect(d.breakdowns.fromStaff).toBeGreaterThanOrEqual(1);
+    expect(d.breakdowns.fixed).toBe(d.breakdowns.fixedInHouse + d.breakdowns.fixedByProvider);
+    expect(d.breakdowns.medianFixHours).not.toBeNull();
+    expect(d.breakdowns.uptimePct).toBeGreaterThan(0);
+    expect(d.breakdowns.uptimePct).toBeLessThanOrEqual(100);
+    expect(d.equipment.total).toBeGreaterThan(0);
+    expect(d.coverage.mix.warranty + d.coverage.mix.amc + d.coverage.mix.cmc + d.coverage.mix.none).toBe(d.equipment.total);
+    expect(d.perMonth.reduce((a: number, m: Any) => a + m.reported, 0)).toBe(d.breakdowns.reported);
+
+    // A range before anything happened is empty, not an error.
+    const old = await ctx.lead.call<Any>("GET", "/reports?from=2020-01-01&to=2020-01-31");
+    expect(old.json.breakdowns.reported).toBe(0);
+    expect(old.json.equipment.total).toBe(0);
+
+    expect((await ctx.staff.call("GET", `/reports?from=${today}&to=${today}`)).status).toBe(403);
+    expect((await ctx.lead.call("GET", `/reports?from=${today}&to=${addDays(today, -1)}`)).status).toBe(400);
+    expect((await ctx.lead.call("GET", "/reports?from=2020-01-01&to=2026-12-31")).status).toBe(400);
+    expect((await ctx.lead.call("GET", "/reports")).status).toBe(400);
   });
 });
 
