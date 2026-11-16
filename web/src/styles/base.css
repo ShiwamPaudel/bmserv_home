@@ -254,6 +254,17 @@ textarea {
   .sidebar .spacer {
     flex: 1;
   }
+  /* Sign out: red outline like the My account button, in a lighter red that reads on navy. */
+  .sidebar .sidebar-signout {
+    margin: var(--s2) var(--s4) 0;
+    padding: 0 var(--s3);
+    border: 1px solid var(--bad-on-navy);
+    border-radius: var(--r-control);
+    color: var(--bad-on-navy);
+  }
+  .sidebar .sidebar-signout:hover {
+    background: rgba(255, 138, 128, 0.12);
+  }
   .main {
     margin-left: var(--w-sidebar);
     padding: var(--s5) var(--s6) var(--s6);
@@ -372,6 +383,10 @@ button.row-link:hover {
   font-size: var(--fs-row);
   font-weight: 500;
   line-height: var(--lh-title);
+}
+/* More (phone): Sign out in red, like the My account button. */
+.row-signout .row-title {
+  color: var(--bad-text);
 }
 .row-line {
   font-size: var(--fs-secondary);

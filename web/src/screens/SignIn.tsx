@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { t } from "@bmserv/shared/terms";
 import { authClient } from "../lib/auth";
+import { installAfterSignIn } from "../lib/install";
 import { useMe, useTitle } from "../lib/hooks";
 import { qk } from "../lib/queryKeys";
 import { Notice, TextField } from "../components/ui";
@@ -48,6 +49,7 @@ export function SignIn() {
       );
       return;
     }
+    installAfterSignIn();
     await qc.invalidateQueries({ queryKey: qk.me });
     navigate(safeNext, { replace: true });
   }

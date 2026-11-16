@@ -22,7 +22,7 @@ export function More() {
           title={t.nav.account}
           lines={[me.data ? `${me.data.user.name}, ${t.roles[me.data.user.role]}` : null]}
         />
-        <Row onClick={() => void signOut()} title={t.nav.signOut} />
+        <Row onClick={() => void signOut()} title={t.nav.signOut} className="row-signout" />
       </Rows>
     </>
   );

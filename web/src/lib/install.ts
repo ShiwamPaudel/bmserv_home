@@ -13,8 +13,9 @@ const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 const LATER_KEY = "bmserv-install-later";
-/** "Not now" hides the popup for a week. */
-const LATER_MS = 7 * 24 * 3_600_000;
+/** "Not now" hides the popup for a week; "Got it" after the steps for a day (in case they did not finish). */
+const WEEK_MS = 7 * 24 * 3_600_000;
+const DAY_MS = 24 * 3_600_000;
 
 export function startInstallCapture(): void {
   window.addEventListener("beforeinstallprompt", (e) => {
@@ -60,23 +61,33 @@ export function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-/** A phone or tablet: touch screen narrower than the desktop layout. */
+/** A phone or tablet, in any orientation (an iPad in landscape is wider than the desktop layout). */
 export function isMobileDevice(): boolean {
+  if (/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent) || isIos()) return true;
   return window.matchMedia("(max-width: 959px)").matches && window.matchMedia("(pointer: coarse)").matches;
 }
 
+/** A fresh sign-in always offers the install popup again, even after "Not now". */
+export function installAfterSignIn(): void {
+  try {
+    localStorage.removeItem(LATER_KEY);
+  } catch {
+    /* nothing stored */
+  }
+}
+
+/** True while the popup is snoozed. The stored value is the time it may show again. */
 export function installLaterActive(): boolean {
   try {
-    const at = Number(localStorage.getItem(LATER_KEY) ?? 0);
-    return Date.now() - at < LATER_MS;
+    return Date.now() < Number(localStorage.getItem(LATER_KEY) ?? 0);
   } catch {
     return false;
   }
 }
 
-export function installLater(): void {
+export function installLater(span: "week" | "day" = "week"): void {
   try {
-    localStorage.setItem(LATER_KEY, String(Date.now()));
+    localStorage.setItem(LATER_KEY, String(Date.now() + (span === "week" ? WEEK_MS : DAY_MS)));
   } catch {
     /* private window: the popup simply comes back next time */
   }

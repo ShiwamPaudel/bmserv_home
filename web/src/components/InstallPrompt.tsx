@@ -1,9 +1,11 @@
-// Install BMServ: a popup on phones and tablets after sign-in, with an Install app button on every phone.
-// Android: the button opens the browser's own install question. iPhone and iPad give websites no install
-// question, so there the button turns the popup into the three Add to Home Screen taps.
+// Install BMServ: a popup on every phone and tablet after sign-in (and when the app is opened while signed
+// in, unless "Not now" was chosen). The Install app button opens the browser's own install question when the
+// browser offers one (Chrome and Edge on Android). Otherwise it turns the popup into the three taps for that
+// phone: Share → Add to Home Screen on iPhone and iPad (Safari has no install question for websites), the
+// browser menu → Install app on other Android browsers.
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bell, Share, SquarePlus, Smartphone, WifiOff, X } from "lucide-react";
+import { Bell, EllipsisVertical, Share, SquarePlus, Smartphone, WifiOff, X } from "lucide-react";
 import { t } from "@bmserv/shared/terms";
 import { useMe } from "../lib/hooks";
 import { installLater, installLaterActive, isInstalled, isIos, isMobileDevice, promptInstall, useInstallOffer } from "../lib/install";
@@ -12,49 +14,67 @@ import { iconProps } from "./ui";
 /** Wait a moment after the screen appears so the popup does not jump in front of it. */
 const SHOW_AFTER_MS = 1200;
 
+type View = "offer" | "iosSteps" | "androidSteps";
+
 export function InstallPrompt() {
   const offer = useInstallOffer();
   const me = useMe();
   const titleId = useId();
-  const [open, setOpen] = useState<"install" | "ios" | "iosSteps" | null>(null);
+  const [view, setView] = useState<View | null>(null);
 
   useEffect(() => {
-    if (open || !isMobileDevice() || isInstalled() || installLaterActive()) return;
-    const mode = offer ? "install" : isIos() ? "ios" : null;
-    if (!mode) return;
-    const timer = window.setTimeout(() => setOpen(mode), SHOW_AFTER_MS);
+    if (view || !isMobileDevice() || isInstalled() || installLaterActive()) return;
+    const timer = window.setTimeout(() => setView("offer"), SHOW_AFTER_MS);
     return () => window.clearTimeout(timer);
-  }, [offer, open]);
+  }, [view]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!view) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       installLater();
-      setOpen(null);
+      setView(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [view]);
 
-  if (!open) return null;
+  if (!view) return null;
 
   function later() {
     installLater();
-    setOpen(null);
+    setView(null);
+  }
+
+  /** After the steps: hide for a day only, in case they did not finish. */
+  function gotIt() {
+    installLater("day");
+    setView(null);
   }
 
   async function install() {
-    if (open === "ios") {
-      setOpen("iosSteps");
+    if (offer) {
+      const accepted = await promptInstall();
+      if (!accepted) installLater();
+      setView(null);
       return;
     }
-    const accepted = await promptInstall();
-    if (!accepted) installLater();
-    setOpen(null);
+    setView(isIos() ? "iosSteps" : "androidSteps");
   }
 
   const hospital = me.data?.hospital;
+  const steps =
+    view === "iosSteps"
+      ? [
+          { icon: Share, text: t.pwa.iosStep1 },
+          { icon: SquarePlus, text: t.pwa.iosStep2 },
+          { icon: Smartphone, text: t.pwa.iosStep3 },
+        ]
+      : [
+          { icon: EllipsisVertical, text: t.pwa.androidStep1 },
+          { icon: SquarePlus, text: t.pwa.androidStep2 },
+          { icon: Smartphone, text: t.pwa.androidStep3 },
+        ];
 
   return createPortal(
     <>
@@ -74,10 +94,10 @@ export function InstallPrompt() {
             )}
           </div>
         </div>
-        <p className="install-intro">{open === "iosSteps" ? t.pwa.iosHow : t.pwa.installIntro}</p>
 
-        {open !== "iosSteps" ? (
+        {view === "offer" ? (
           <>
+            <p className="install-intro">{t.pwa.installIntro}</p>
             <ul className="install-points">
               <li>
                 <span className="install-icon">
@@ -109,28 +129,19 @@ export function InstallPrompt() {
           </>
         ) : (
           <>
+            <p className="install-intro">{view === "iosSteps" ? t.pwa.iosHow : t.pwa.androidHow}</p>
             <ol className="install-points install-steps">
-              <li>
-                <span className="install-icon">
-                  <Share {...iconProps} size={18} />
-                </span>
-                {t.pwa.iosStep1}
-              </li>
-              <li>
-                <span className="install-icon">
-                  <SquarePlus {...iconProps} size={18} />
-                </span>
-                {t.pwa.iosStep2}
-              </li>
-              <li>
-                <span className="install-icon">
-                  <Smartphone {...iconProps} size={18} />
-                </span>
-                {t.pwa.iosStep3}
-              </li>
+              {steps.map((s) => (
+                <li key={s.text}>
+                  <span className="install-icon">
+                    <s.icon {...iconProps} size={18} />
+                  </span>
+                  {s.text}
+                </li>
+              ))}
             </ol>
             <div className="install-actions">
-              <button className="btn primary block" type="button" onClick={later} autoFocus>
+              <button className="btn primary block" type="button" onClick={gotIt} autoFocus>
                 {t.pwa.gotIt}
               </button>
             </div>

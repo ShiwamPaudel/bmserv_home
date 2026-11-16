@@ -115,7 +115,7 @@ web/public/          brand/ (cropped logos, PWA icons, sign-in photos) favicon.i
 | D43 | New equipment: optional `warranty` in POST /equipment, default 1 year from installation (ends start + 12 months − 1 day), provider = equipment's provider, PMS from the model; same transaction (`insertCoverage`) | Owner, 2026-11-16 |
 | D44 | PMS "due" filter kept as "all from today" (Home, CSV); the screen uses soon (Settings window) and upcoming (to 12 months) | No change to Home or export |
 | D45 | "Hospital setup" groups Models, Departments, Service providers, Team; routes unchanged, tabs are links (`SetupTabs`) | Owner, 2026-11-16 |
-| D46 | Install popup: event caught at app start (`lib/install.ts`); phones/tablets only (coarse pointer, < 960 px); "Not now" snoozes 7 days. iPhone/iPad get the same "Install app" button, which shows the Add to Home Screen steps | The event often fired on sign-in, before the layout existed. Safari has no install API, so no true one-tap install on iOS |
+| D46 | Install popup: event caught at app start (`lib/install.ts`); phones/tablets only (coarse pointer, < 960 px); shown on every phone/tablet (user agent, or touch and < 960 px) whether or not the browser sends its install event; Install app uses the event when there is one, else shows the iPhone or Android menu steps. Every sign-in clears the snooze; "Not now" 7 days, "Got it" 1 day | The event often fired on sign-in, before the layout existed. Safari has no install API, so no true one-tap install on iOS |
 | D37 | Manuals are managed only on the model page (`/models/:id`); the equipment page lists them read-only with "Open model". Manual lists filter manual kinds (a model also owns its photo) | Owner: one manual per model, many units |
 
 ## 6. Open questions for the owner
@@ -158,6 +158,8 @@ Node 22.18 (local) · hono 4.13.18 · @hono/node-server 2.1.8 · better-auth 1.7
 
 Newest first: date, what changed, docs touched.
 
+- 2026-11-16 — Install popup did not appear on Android browsers without the install event (Samsung Internet, Firefox, Chrome after a dismissal) or on iPad in landscape: now always shown on phones/tablets, with menu steps as the fallback; every sign-in shows it again. Docs: PRD, DESIGN, MEMORY.
+- 2026-11-16 — Sign out in red everywhere: sidebar red-outline button (new token `--bad-on-navy`), red row on More. Docs: DESIGN, MEMORY.
 - 2026-11-16 — Text trim across the app: no intro lines (Settings, Settings tabs, Report a problem, staff Equipment, Scan, PMS Due soon/Upcoming, Reports PDF note, manuals on model/equipment, recipients, WhatsApp), no explanation hints on fields; remaining hints shortened (role choices, username, logo, CSV import, model search). Rule in DESIGN section 9. Logo preview no longer overflows its box. Docs: DESIGN, MEMORY.
 - 2026-11-16 — My account: removed card explanation lines, the "You get notified when" block and the Sign out card; Sign out is one red-outline button. Docs: DESIGN, MEMORY.
 - 2026-11-16 — Install app button on iPhone too (opens the steps); bottom bar alignment (one column per item, fixed icon line, one-line labels; staff bar had 4 items in 5 columns). Docs: PRD, DESIGN, MEMORY.

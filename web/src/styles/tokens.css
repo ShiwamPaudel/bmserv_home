@@ -15,6 +15,8 @@
   --ok-bg: #e6f4ec;
   --bad-text: #a3231b;
   --bad-bg: #fcebe9;
+  /* Red text on the navy sidebar (--bad-text is too dark there). */
+  --bad-on-navy: #ff9a90;
   --wait-text: #8a4b00;
   --wait-bg: #fff0d2;
   --off-text: #44545c;

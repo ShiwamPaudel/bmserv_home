@@ -183,7 +183,7 @@ export function Layout() {
             <User {...iconProps} />
             {t.nav.account}
           </NavLink>
-          <button type="button" onClick={() => void signOut()}>
+          <button type="button" className="sidebar-signout" onClick={() => void signOut()}>
             <LogOut {...iconProps} />
             {t.nav.signOut}
           </button>
@@ -274,7 +274,7 @@ function StaffLayout() {
         </nav>
         <span className="spacer" />
         <nav aria-label="Account">
-          <button type="button" onClick={() => void signOut()}>
+          <button type="button" className="sidebar-signout" onClick={() => void signOut()}>
             <LogOut {...iconProps} />
             {t.nav.signOut}
           </button>
